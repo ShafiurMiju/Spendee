@@ -567,7 +567,7 @@ const VoiceEntryScreen: React.FC = () => {
             ) : null}
             {transcript ? (
               <View style={[styles.transcriptBox, { borderTopColor: colors.border }]}>
-                <Text style={[styles.transcriptLabel, { color: colors.textSecondary }]}>Transcript</Text>
+                <Text style={[styles.transcriptLabel, { color: colors.textSecondary }]}>English Transcript</Text>
                 <Text style={[styles.transcriptValue, { color: colors.text }]}>{transcript}</Text>
                 <TouchableOpacity
                   onPress={() => setTranscript('')}

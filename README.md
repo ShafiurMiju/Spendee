@@ -2,6 +2,23 @@ This is a new [**React Native**](https://reactnative.dev) project, bootstrapped 
 
 # Getting Started
 
+## Environment Setup
+
+Create a local environment file before using AI voice features:
+
+```sh
+cp .env.example .env
+```
+
+Set your Groq API key in `.env`:
+
+```env
+GROQ_API_KEY=your_groq_api_key_here
+GROQ_STT_LANGUAGE=auto
+```
+
+`GROQ_STT_LANGUAGE=auto` enables Bangla/English auto-detection and returns an English transcript.
+
 > **Note**: Make sure you have completed the [Set Up Your Environment](https://reactnative.dev/docs/set-up-your-environment) guide before proceeding.
 
 ## Step 1: Start Metro

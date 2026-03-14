@@ -1,4 +1,4 @@
-import { getGroqApiKey, GROQ_API_URL, GROQ_MODEL } from '../config/groq';
+import { getGroqApiKey, GROQ_API_URL, GROQ_MODEL, GROQ_STT_LANGUAGE } from '../config/groq';
 
 // ---------------------------------------------------------------------------
 // Groq Whisper transcription — record audio file → text
@@ -11,22 +11,44 @@ export async function transcribeAudio(filePath: string): Promise<string> {
 
   const localPath = filePath.replace(/^file:\/\//, '');
 
-  const formData = new FormData();
-  formData.append('file', {
-    uri: `file://${localPath}`,
-    name: 'recording.m4a',
-    type: 'audio/m4a',
-  } as any);
-  formData.append('model', 'whisper-large-v3');
-  formData.append('response_format', 'text');
+  const buildFormData = (withTranslationPrompt: boolean): FormData => {
+    const formData = new FormData();
+    formData.append('file', {
+      uri: `file://${localPath}`,
+      name: 'recording.m4a',
+      type: 'audio/m4a',
+    } as any);
+    formData.append('model', 'whisper-large-v3');
+    formData.append('response_format', 'text');
+    if (GROQ_STT_LANGUAGE && GROQ_STT_LANGUAGE !== 'auto') {
+      formData.append('language', GROQ_STT_LANGUAGE);
+    }
+    if (withTranslationPrompt) {
+      formData.append(
+        'prompt',
+        'Return the final transcript in English. If the speech is Bangla, translate it to natural English. If already English, keep it as English transcript.',
+      );
+    }
+    return formData;
+  };
 
-  const response = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-    },
-    body: formData,
-  });
+  const callWhisper = async (endpoint: string, withTranslationPrompt: boolean): Promise<Response> => {
+    return fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: buildFormData(withTranslationPrompt),
+    });
+  };
+
+  // Prefer dedicated translation endpoint to force English output.
+  let response = await callWhisper('https://api.groq.com/openai/v1/audio/translations', false);
+
+  // Fallback for providers/models that do not expose translations endpoint.
+  if (!response.ok) {
+    response = await callWhisper('https://api.groq.com/openai/v1/audio/transcriptions', true);
+  }
 
   if (!response.ok) {
     const err = await response.text();
@@ -83,7 +105,12 @@ function toNumber(value: unknown): number {
   }
 
   if (typeof value === 'string') {
-    const normalized = value.replace(/[^\d.-]/g, '');
+    const normalizedDigits = value.replace(/[০-৯]/g, digit => {
+      const banglaDigits = '০১২৩৪৫৬৭৮৯';
+      const index = banglaDigits.indexOf(digit);
+      return index >= 0 ? String(index) : digit;
+    });
+    const normalized = normalizedDigits.replace(/[^\d.-]/g, '');
     const n = Number(normalized);
     return isFinite(n) ? n : 0;
   }
@@ -173,6 +200,7 @@ export async function parseVoiceTransactions(
 
   const systemPrompt = [
     'You are a financial transaction parser.',
+    'The transcript can be in Bangla (Bengali), English, or mixed Bangla-English.',
     'Extract one or more records from user speech and return strict JSON only.',
     'Return shape: {"items":[{...}]}.',
     'For each item include:',
@@ -186,6 +214,7 @@ export async function parseVoiceTransactions(
     '- note: optional short note',
     'Rules:',
     '- If date is omitted, use today.',
+    '- Convert Bangla numerals (০১২৩৪৫৬৭৮৯) and Bengali amount words into numeric amount.',
     '- Convert currency words like taka to numeric amount.',
     '- Split combined sentences into multiple items.',
     '- Never include explanation text; output JSON only.',
