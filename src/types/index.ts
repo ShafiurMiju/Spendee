@@ -133,6 +133,7 @@ export type RootStackParamList = {
   Login: undefined;
   Main: undefined;
   AddExpense: { expense?: Expense } | undefined;
+  VoiceEntry: { defaultKind?: 'expense' | 'income' } | undefined;
   ExpenseDetails: { expenseId: string };
   CategoryManagement: undefined;
   PDFExport: { source?: 'expense' | 'income' | 'rent' | 'both' } | undefined;

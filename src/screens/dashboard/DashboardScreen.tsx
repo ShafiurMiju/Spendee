@@ -180,6 +180,19 @@ const DashboardScreen: React.FC = () => {
       {/* ── Quick Actions ── */}
       <View style={styles.quickActions}>
         <AnimatedPressable
+          onPress={() => navigation.navigate('VoiceEntry')}
+          style={[styles.actionRow, { backgroundColor: colors.card, borderColor: colors.border }]}> 
+          <View style={[styles.actionAccent, { backgroundColor: colors.primary }]} />
+          <View style={[styles.actionRowIcon, { backgroundColor: colors.primary + '18' }]}> 
+            <MaterialCommunityIcons name="microphone-message" size={20} color={colors.primary} />
+          </View>
+          <View style={styles.actionRowBody}>
+            <Text style={[styles.actionRowLabel, { color: colors.text }]}>AI Voice Entry</Text>
+            <Text style={[styles.actionRowSub, { color: colors.textSecondary }]}>Speak income and expenses</Text>
+          </View>
+          <MaterialCommunityIcons name="chevron-right" size={22} color={colors.primary} style={styles.actionRowChev} />
+        </AnimatedPressable>
+        <AnimatedPressable
           onPress={() => navigation.navigate('AddIncome' as any)}
           style={[styles.actionRow, { backgroundColor: colors.card, borderColor: colors.border }]}>
           <View style={[styles.actionAccent, { backgroundColor: colors.success }]} />

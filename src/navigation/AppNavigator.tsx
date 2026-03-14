@@ -26,6 +26,7 @@ import AddRentCostScreen from '../screens/rent/AddRentCostScreen';
 import RentReportScreen from '../screens/rent/RentReportScreen';
 import AddIncomeScreen from '../screens/income/AddIncomeScreen';
 import IncomeListScreen from '../screens/income/IncomeListScreen';
+import VoiceEntryScreen from '../screens/voice/VoiceEntryScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<BottomTabParamList>();
@@ -175,6 +176,11 @@ const AppNavigator: React.FC = () => {
           <Stack.Screen
             name="AddIncome"
             component={AddIncomeScreen}
+            options={{ presentation: 'modal', animation: 'slide_from_bottom' }}
+          />
+          <Stack.Screen
+            name="VoiceEntry"
+            component={VoiceEntryScreen}
             options={{ presentation: 'modal', animation: 'slide_from_bottom' }}
           />
         </>
