@@ -1,0 +1,62 @@
+[debug] [2026-03-14T01:36:31.226Z] ----------------------------------------------------------------------
+[debug] [2026-03-14T01:36:31.227Z] Command:       /usr/local/bin/node /usr/local/bin/firebase init firestore
+[debug] [2026-03-14T01:36:31.227Z] CLI Version:   15.8.0
+[debug] [2026-03-14T01:36:31.227Z] Platform:      darwin
+[debug] [2026-03-14T01:36:31.227Z] Node Version:  v22.17.0
+[debug] [2026-03-14T01:36:31.227Z] Time:          Sat Mar 14 2026 07:36:31 GMT+0600 (Bangladesh Standard Time)
+[debug] [2026-03-14T01:36:31.227Z] ----------------------------------------------------------------------
+[debug] 
+[info] 
+     ######## #### ########  ######## ########     ###     ######  ########
+     ##        ##  ##     ## ##       ##     ##  ##   ##  ##       ##
+     ######    ##  ########  ######   ########  #########  ######  ######
+     ##        ##  ##    ##  ##       ##     ## ##     ##       ## ##
+     ##       #### ##     ## ######## ########  ##     ##  ######  ########
+
+You're about to initialize a Firebase project in this directory:
+
+  /Users/aryanemon/Desktop/Personal/Spendee
+
+[info] 
+=== Project Setup
+[info] 
+[info] First, let's associate this project directory with a Firebase project.
+[info] You can create multiple project aliases by running firebase use --add, 
+[info] 
+[debug] [2026-03-14T01:36:40.051Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-03-14T01:36:40.052Z] > authorizing via signed-in user (srmmiju.octopidigital@gmail.com)
+[debug] [2026-03-14T01:36:40.053Z] Checked if tokens are valid: false, expires at: 1773399931305
+[debug] [2026-03-14T01:36:40.053Z] Checked if tokens are valid: false, expires at: 1773399931305
+[debug] [2026-03-14T01:36:40.053Z] > refreshing access token with scopes: []
+[debug] [2026-03-14T01:36:40.055Z] >>> [apiv2][query] POST https://www.googleapis.com/oauth2/v3/token [none]
+[debug] [2026-03-14T01:36:40.055Z] >>> [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-03-14T01:36:40.325Z] <<< [apiv2][status] POST https://www.googleapis.com/oauth2/v3/token 200
+[debug] [2026-03-14T01:36:40.325Z] <<< [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-03-14T01:36:40.339Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects pageSize=100
+[debug] [2026-03-14T01:36:41.204Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects 200
+[debug] [2026-03-14T01:36:41.204Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects [omitted]
+[debug] [2026-03-14T01:37:45.354Z] ----------------------------------------------------------------------
+[debug] [2026-03-14T01:37:45.355Z] Command:       /usr/local/bin/node /usr/local/bin/firebase init firestore
+[debug] [2026-03-14T01:37:45.355Z] CLI Version:   15.8.0
+[debug] [2026-03-14T01:37:45.355Z] Platform:      darwin
+[debug] [2026-03-14T01:37:45.355Z] Node Version:  v22.17.0
+[debug] [2026-03-14T01:37:45.355Z] Time:          Sat Mar 14 2026 07:37:45 GMT+0600 (Bangladesh Standard Time)
+[debug] [2026-03-14T01:37:45.355Z] ----------------------------------------------------------------------
+[debug] 
+[info] 
+     ######## #### ########  ######## ########     ###     ######  ########
+     ##        ##  ##     ## ##       ##     ##  ##   ##  ##       ##
+     ######    ##  ########  ######   ########  #########  ######  ######
+     ##        ##  ##    ##  ##       ##     ## ##     ##       ## ##
+     ##       #### ##     ## ######## ########  ##     ##  ######  ########
+
+You're about to initialize a Firebase project in this directory:
+
+  /Users/aryanemon/Desktop/Personal/Spendee
+
+[info] 
+=== Project Setup
+[info] 
+[info] First, let's associate this project directory with a Firebase project.
+[info] You can create multiple project aliases by running firebase use --add, 
+[info] 
