@@ -183,7 +183,7 @@ const ExpenseListScreen: React.FC = () => {
           </Text>
         </View>
         <View style={[styles.summaryIconWrap, { backgroundColor: colors.error + '18' }]}>
-          <MaterialCommunityIcons name="receipt-text-outline" size={28} color={colors.error} />
+          <MaterialCommunityIcons name="receipt" size={28} color={colors.error} />
         </View>
       </View>
 
@@ -228,27 +228,24 @@ const ExpenseListScreen: React.FC = () => {
         contentContainerStyle={[styles.list, { paddingBottom: insets.bottom + 100 }]}
         ListEmptyComponent={
           !loading ? (
-            <EmptyState icon="receipt-text-outline" message={t('expense.noExpenses')} />
+            <EmptyState icon="receipt" message={t('expense.noExpenses')} />
           ) : null
         }
       />
 
-      {/* ── Extended FAB ── */}
+      {/* ── FAB ── */}
       <AnimatedPressable
         scaleValue={0.95}
         onPress={() => navigation.navigate('AddExpense')}
         style={[styles.fab, { backgroundColor: colors.primary, bottom: insets.bottom + 20 }]}>
-        <MaterialCommunityIcons name="plus" size={20} color={colors.textInverse} />
-        <Text style={[styles.fabText, { color: colors.textInverse }]}>
-          {t('expense.addExpense')}
-        </Text>
+        <MaterialCommunityIcons name="plus" size={28} color={colors.textInverse} />
       </AnimatedPressable>
 
       <AnimatedPressable
         scaleValue={0.95}
         onPress={() => navigation.navigate('VoiceEntry', { defaultKind: 'expense' })}
         style={[styles.voiceFab, { backgroundColor: colors.surface, borderColor: colors.border, bottom: insets.bottom + 92 }]}>
-        <MaterialCommunityIcons name="microphone-message" size={20} color={colors.primary} />
+        <MaterialCommunityIcons name="microphone-outline" size={20} color={colors.primary} />
       </AnimatedPressable>
 
       {/* ── Filter Modal ── */}
@@ -483,19 +480,17 @@ const styles = StyleSheet.create({
   fab: {
     position: 'absolute',
     right: 20,
-    flexDirection: 'row',
+    width: 58,
+    height: 58,
+    borderRadius: 29,
     alignItems: 'center',
-    gap: 8,
-    paddingHorizontal: 20,
-    paddingVertical: 14,
-    borderRadius: 30,
+    justifyContent: 'center',
     elevation: 6,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
     shadowRadius: 8,
   },
-  fabText: { fontSize: 15, fontWeight: '700' },
   voiceFab: {
     position: 'absolute',
     right: 20,

@@ -184,7 +184,7 @@ const DashboardScreen: React.FC = () => {
           style={[styles.actionRow, { backgroundColor: colors.card, borderColor: colors.border }]}> 
           <View style={[styles.actionAccent, { backgroundColor: colors.primary }]} />
           <View style={[styles.actionRowIcon, { backgroundColor: colors.primary + '18' }]}> 
-            <MaterialCommunityIcons name="microphone-message" size={20} color={colors.primary} />
+            <MaterialCommunityIcons name="microphone-outline" size={20} color={colors.primary} />
           </View>
           <View style={styles.actionRowBody}>
             <Text style={[styles.actionRowLabel, { color: colors.text }]}>AI Voice Entry</Text>
@@ -270,7 +270,7 @@ const DashboardScreen: React.FC = () => {
 
       {recentExpenses.length === 0 ? (
         <View style={[styles.emptyCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          <MaterialCommunityIcons name="receipt-text-clock-outline" size={36} color={colors.border} />
+          <MaterialCommunityIcons name="receipt" size={36} color={colors.border} />
           <Text style={[styles.emptyText, { color: colors.textSecondary }]}>{t('dashboard.noExpenses')}</Text>
         </View>
       ) : (

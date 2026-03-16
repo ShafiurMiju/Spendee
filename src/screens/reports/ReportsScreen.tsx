@@ -505,7 +505,7 @@ const ReportsScreen: React.FC = () => {
 
       {totalExpenses === 0 && (
         <View style={[styles.emptyCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          <MaterialCommunityIcons name="receipt-text-outline" size={36} color={colors.border} />
+          <MaterialCommunityIcons name="receipt" size={36} color={colors.border} />
           <Text style={[styles.emptyText, { color: colors.textSecondary }]}>No expenses in this period</Text>
         </View>
       )}

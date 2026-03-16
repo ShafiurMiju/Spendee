@@ -128,7 +128,7 @@ const ManageTypesScreen: React.FC = () => {
       {/* ── Add Row ── */}
       <View style={[styles.addCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
         <View style={[styles.inputWrap, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-          <MaterialCommunityIcons name="shape-plus-outline" size={18} color={colors.primary} />
+          <MaterialCommunityIcons name="shape-plus" size={18} color={colors.primary} />
           <TextInput
             style={[styles.addInput, { color: colors.text }]}
             placeholder={t('expenseType.typeName')}

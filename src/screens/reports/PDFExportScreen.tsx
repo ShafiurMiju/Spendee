@@ -35,7 +35,7 @@ import { AlertModalConfig } from '../../components/common/AlertModal';
 type ExportMode = 'expense' | 'income' | 'rent' | 'both';
 
 const MODE_CONFIG: Record<ExportMode, { icon: string; label: string; color: string }> = {
-  expense: { icon: 'receipt-text-outline', label: 'Expense Report', color: '#EF4444' },
+  expense: { icon: 'receipt', label: 'Expense Report', color: '#EF4444' },
   income: { icon: 'cash-plus', label: 'Income Report', color: '#22C55E' },
   rent: { icon: 'home-city-outline', label: 'Rent Collection Report', color: '#4A90D9' },
   both: { icon: 'swap-vertical', label: 'Expense & Income Report', color: '#8B5CF6' },

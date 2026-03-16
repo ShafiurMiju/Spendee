@@ -235,22 +235,19 @@ const IncomeListScreen: React.FC = () => {
         }
       />
 
-      {/* ── Extended FAB ── */}
+      {/* ── FAB ── */}
       <AnimatedPressable
         scaleValue={0.95}
         onPress={() => navigation.navigate('AddIncome')}
         style={[styles.fab, { backgroundColor: colors.success, bottom: insets.bottom + 20 }]}>
-        <MaterialCommunityIcons name="plus" size={20} color="#fff" />
-        <Text style={styles.fabText}>
-          {t('income.addIncome')}
-        </Text>
+        <MaterialCommunityIcons name="plus" size={28} color="#fff" />
       </AnimatedPressable>
 
       <AnimatedPressable
         scaleValue={0.95}
         onPress={() => navigation.navigate('VoiceEntry', { defaultKind: 'income' })}
         style={[styles.voiceFab, { backgroundColor: colors.surface, borderColor: colors.border, bottom: insets.bottom + 92 }]}>
-        <MaterialCommunityIcons name="microphone-message" size={20} color={colors.success} />
+        <MaterialCommunityIcons name="microphone-outline" size={20} color={colors.success} />
       </AnimatedPressable>
 
       {/* ── Filter Modal ── */}
@@ -466,19 +463,17 @@ const styles = StyleSheet.create({
   fab: {
     position: 'absolute',
     right: 20,
-    flexDirection: 'row',
+    width: 58,
+    height: 58,
+    borderRadius: 29,
     alignItems: 'center',
-    gap: 8,
-    paddingHorizontal: 20,
-    paddingVertical: 14,
-    borderRadius: 30,
+    justifyContent: 'center',
     elevation: 6,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
     shadowRadius: 8,
   },
-  fabText: { fontSize: 15, fontWeight: '700', color: '#fff' },
   voiceFab: {
     position: 'absolute',
     right: 20,

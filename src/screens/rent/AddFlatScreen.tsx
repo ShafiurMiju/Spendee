@@ -224,7 +224,7 @@ const AddFlatScreen: React.FC = () => {
       {/* ── Bill Breakdown Section ── */}
       <View style={[styles.billSection, { backgroundColor: colors.card, borderColor: colors.border }]}>
         <View style={styles.billHeader}>
-          <MaterialCommunityIcons name="receipt-text-outline" size={18} color={colors.primary} />
+          <MaterialCommunityIcons name="receipt" size={18} color={colors.primary} />
           <Text style={[styles.billTitle, { color: colors.text }]}>{t('rent.billBreakdown')}</Text>
         </View>
 

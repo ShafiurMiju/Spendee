@@ -23,9 +23,9 @@ const SHORT_LABELS: Record<string, string> = {
 
 const TAB_ICONS: Record<string, string> = {
   Dashboard: 'view-dashboard-outline',
-  Expenses:  'receipt-text-outline',
+  Expenses:  'file-document-outline',
   Income:    'cash-plus',
-  Reports:   'chart-pie-outline',
+  Reports:   'chart-bar',
   Rent:      'home-city-outline',
   Settings:  'cog-outline',
 };

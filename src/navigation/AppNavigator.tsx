@@ -66,7 +66,7 @@ function MainTabs() {
           title: t('expense.expenses'),
           tabBarLabel: t('expense.expenses'),
           tabBarIcon: ({ color, size }) => (
-            <MaterialCommunityIcons name="receipt-text-outline" color={color} size={size} />
+            <MaterialCommunityIcons name="receipt" color={color} size={size} />
           ),
         }}
       />
@@ -88,7 +88,7 @@ function MainTabs() {
           title: t('reports.title'),
           tabBarLabel: t('reports.title'),
           tabBarIcon: ({ color, size }) => (
-            <MaterialCommunityIcons name="chart-pie-outline" color={color} size={size} />
+            <MaterialCommunityIcons name="chart-bar" color={color} size={size} />
           ),
         }}
       />

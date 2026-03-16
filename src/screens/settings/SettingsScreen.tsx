@@ -186,7 +186,7 @@ const SettingsScreen: React.FC = () => {
         <NavRow
           label={t('settings.manageTypes')}
           sub="Add or remove expense types"
-          iconName="shape-plus-outline"
+          iconName="shape-plus"
           iconBg={colors.primary + '18'}
           iconColor={colors.primary}
           onPress={() => navigation.navigate('ManageTypes')}
