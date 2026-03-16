@@ -14,7 +14,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useAppTheme } from '../../contexts/ThemeContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Input, Button, AlertModal } from '../../components/common';
+import { Input, Button, AlertModal, ScreenHeader } from '../../components/common';
 import { addRentCost, updateRentCost } from '../../services/rentService';
 import { getOwners } from '../../services/ownerService';
 import { RentCostInput, RootStackParamList, Owner } from '../../types';
@@ -133,6 +133,7 @@ const AddRentCostScreen: React.FC = () => {
       style={[styles.container, { backgroundColor: colors.background }]}
       contentContainerStyle={[styles.content, { paddingTop: insets.top + 16, paddingBottom: insets.bottom + 16 }]}
       keyboardShouldPersistTaps="handled">
+      <ScreenHeader inline title={isEditing ? t('rent.editCost') : t('rent.addCost')} />
       <Input
         label={t('rent.costTitle')}
         leftIcon="format-title"

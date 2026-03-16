@@ -16,7 +16,7 @@ import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { useAppTheme } from '../../contexts/ThemeContext';
-import { AlertModal, Button, Input } from '../../components/common';
+import { AlertModal, Button, Input, ScreenHeader } from '../../components/common';
 import { RootStackParamList, ExpenseTypeItem, Category, ExpenseInput, IncomeInput } from '../../types';
 import { getExpenseTypes, seedDefaultExpenseTypes } from '../../services/expenseTypeService';
 import { getCategories } from '../../services/categoryService';
@@ -503,6 +503,7 @@ const VoiceEntryScreen: React.FC = () => {
           paddingHorizontal: 16,
         }}
         keyboardShouldPersistTaps="handled">
+        <ScreenHeader inline title="AI Voice Entry" />
 
         {/* Mode selector */}
         <View style={[styles.modeSelector, { backgroundColor: colors.surface, borderColor: colors.border }]}>

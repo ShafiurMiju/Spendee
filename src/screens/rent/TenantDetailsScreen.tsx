@@ -6,7 +6,7 @@ import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useAppTheme } from '../../contexts/ThemeContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Button, Card, LoadingOverlay, AlertModal, EmptyState } from '../../components/common';
+import { Button, Card, LoadingOverlay, AlertModal, EmptyState, ScreenHeader } from '../../components/common';
 import { getTenant, deactivateTenant } from '../../services/tenantService';
 import { getPaymentsByTenant } from '../../services/rentService';
 import { getFlats } from '../../services/flatService';
@@ -137,6 +137,7 @@ const TenantDetailsScreen: React.FC = () => {
       renderItem={renderPayment}
       ListHeaderComponent={
         <>
+          <ScreenHeader inline title={t('rent.tenantDetails')} />
           <Card>
             <DetailRow icon="account-outline" label={t('rent.name')} value={tenant.name} colors={colors} />
             <DetailRow icon="door" label={t('rent.flatNumber')} value={flat?.flatNumber ?? '—'} colors={colors} />
@@ -155,7 +156,7 @@ const TenantDetailsScreen: React.FC = () => {
             <DetailRow
               icon="calendar-month-outline"
               label={t('rent.joinMonth')}
-              value={tenant.joinMonth ?? toMonthKey(tenant.movedInAt)}
+              value={tenant.joinMonth ?? (tenant.movedInAt ? toMonthKey(tenant.movedInAt) : '—')}
               colors={colors}
             />
             <DetailRow

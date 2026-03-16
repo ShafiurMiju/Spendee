@@ -12,7 +12,7 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useAppTheme } from '../../contexts/ThemeContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Button, EmptyState, AlertModal } from '../../components/common';
+import { Button, EmptyState, AlertModal, ScreenHeader } from '../../components/common';
 import { onOwnersSnapshot, deactivateOwner } from '../../services/ownerService';
 import { Owner, RootStackParamList } from '../../types';
 import { AlertModalConfig } from '../../components/common/AlertModal';
@@ -66,12 +66,7 @@ const ManageOwnersScreen: React.FC = () => {
       contentContainerStyle={{ paddingTop: insets.top + 16, paddingBottom: insets.bottom + 32 }}>
 
       {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-          <MaterialCommunityIcons name="arrow-left" size={24} color={colors.text} />
-        </TouchableOpacity>
-        <Text style={[styles.title, { color: colors.text }]}>{t('rent.manageOwners')}</Text>
-      </View>
+      <ScreenHeader inline title={t('rent.manageOwners')} />
 
       {/* Owner List */}
       {owners.length === 0 ? (
@@ -122,21 +117,7 @@ const ManageOwnersScreen: React.FC = () => {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    paddingHorizontal: 16,
-    marginBottom: 16,
-  },
-  backBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  title: { fontSize: 24, fontWeight: '800', letterSpacing: -0.5 },
+
   list: { paddingHorizontal: 16 },
   ownerCard: {
     flexDirection: 'row',

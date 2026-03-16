@@ -13,7 +13,7 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { useAppTheme } from '../../contexts/ThemeContext';
-import { Button, Card, AlertModal } from '../../components/common';
+import { Button, Card, AlertModal, ScreenHeader } from '../../components/common';
 import { getExpenses } from '../../services/expenseService';
 import { getIncomes } from '../../services/incomeService';
 import { getTenants, getTenantsByMonth } from '../../services/tenantService';
@@ -297,18 +297,7 @@ const PDFExportScreen: React.FC = () => {
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       {/* ── Header ── */}
-      <View style={[styles.header, { paddingTop: insets.top + 8, backgroundColor: colors.background, borderBottomColor: colors.border }]}>
-        <TouchableOpacity style={[styles.backBtn, { backgroundColor: colors.surface, borderColor: colors.border }]} onPress={() => navigation.goBack()}>
-          <MaterialCommunityIcons name="arrow-left" size={20} color={colors.text} />
-        </TouchableOpacity>
-        <View style={styles.headerCenter}>
-          <Text style={[styles.headerTitle, { color: colors.text }]}>Export PDF</Text>
-          <Text style={[styles.headerSub, { color: colors.textSecondary }]}>
-            {modeConfig.label}
-          </Text>
-        </View>
-        <View style={styles.backBtn} />
-      </View>
+      <ScreenHeader title="Export PDF" subtitle={modeConfig.label} />
 
       <ScrollView
         style={{ flex: 1 }}
@@ -442,18 +431,6 @@ const PDFExportScreen: React.FC = () => {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingBottom: 12,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    gap: 12,
-  },
-  backBtn: { width: 38, height: 38, borderRadius: 19, borderWidth: 1, justifyContent: 'center', alignItems: 'center' },
-  headerCenter: { flex: 1, alignItems: 'center' },
-  headerTitle: { fontSize: 18, fontWeight: '700' },
-  headerSub: { fontSize: 12, marginTop: 1 },
   content: { padding: 16 },
   modeGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   modeChip: {

@@ -13,7 +13,7 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useAppTheme } from '../../contexts/ThemeContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { AlertModal } from '../../components/common';
+import { AlertModal, ScreenHeader } from '../../components/common';
 import { AlertModalConfig } from '../../components/common/AlertModal';
 import { getTenantsByMonth } from '../../services/tenantService';
 import { getFlats } from '../../services/flatService';
@@ -122,12 +122,7 @@ const RentPDFExportScreen: React.FC = () => {
       contentContainerStyle={[styles.content, { paddingTop: insets.top + 12, paddingBottom: insets.bottom + 32 }]}>
 
       {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-          <MaterialCommunityIcons name="arrow-left" size={24} color={colors.text} />
-        </TouchableOpacity>
-        <Text style={[styles.screenTitle, { color: colors.text }]}>{t('rent.multiMonthPdf')}</Text>
-      </View>
+      <ScreenHeader inline title={t('rent.multiMonthPdf')} />
 
       {/* Icon Card */}
       <View style={[styles.iconCard, { backgroundColor: colors.primary + '12' }]}>
@@ -195,20 +190,7 @@ const RentPDFExportScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   content: { padding: 16 },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 24,
-    gap: 12,
-  },
-  backBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  screenTitle: { fontSize: 22, fontWeight: '800' },
+
   iconCard: {
     borderRadius: 16,
     padding: 24,

@@ -6,7 +6,7 @@ import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAppTheme } from '../../contexts/ThemeContext';
-import { Button, Card, LoadingOverlay, AlertModal } from '../../components/common';
+import { Button, Card, LoadingOverlay, AlertModal, ScreenHeader } from '../../components/common';
 import { getExpense, deleteExpense } from '../../services/expenseService';
 import { Expense, RootStackParamList } from '../../types';
 import { formatCurrency, formatDate } from '../../utils/formatting';
@@ -104,6 +104,7 @@ const ExpenseDetailsScreen: React.FC = () => {
     <ScrollView
       style={[styles.container, { backgroundColor: colors.background }]}
       contentContainerStyle={[styles.content, { paddingTop: insets.top + 16, paddingBottom: insets.bottom + 16 }]}>
+      <ScreenHeader inline title={t('expense.expenseDetails')} />
       <Card>
         <View style={styles.header}>
           <View style={[styles.typeBadge, { backgroundColor: typeColor }]}>

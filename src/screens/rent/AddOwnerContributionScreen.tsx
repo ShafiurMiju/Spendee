@@ -14,7 +14,7 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useAppTheme } from '../../contexts/ThemeContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Input, Button, AlertModal } from '../../components/common';
+import { Input, Button, AlertModal, ScreenHeader } from '../../components/common';
 import { getOwners, addOwnerContribution } from '../../services/ownerService';
 import { Owner, OwnerContributionInput, RootStackParamList } from '../../types';
 import { AlertModalConfig } from '../../components/common/AlertModal';
@@ -100,6 +100,7 @@ const AddOwnerContributionScreen: React.FC = () => {
       style={[styles.container, { backgroundColor: colors.background }]}
       contentContainerStyle={[styles.content, { paddingTop: insets.top + 16, paddingBottom: insets.bottom + 16 }]}
       keyboardShouldPersistTaps="handled">
+      <ScreenHeader inline title={t('rent.addContribution')} />
 
       {/* Owner Selection */}
       <Text style={[styles.label, { color: colors.textSecondary }]}>{t('rent.selectOwner')}</Text>

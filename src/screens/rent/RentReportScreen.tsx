@@ -22,6 +22,7 @@ import { Tenant, RentPayment, RentCost, RootStackParamList, Owner, OwnerContribu
 import { formatCurrency, toMonthKey } from '../../utils/formatting';
 import { MONTHS } from '../../constants/categories';
 import { RENT_COST_CATEGORY_ICONS, DEFAULT_RENT_COST_ICON } from '../../constants/rent';
+import { BackButton, ScreenHeader } from '../../components/common';
 
 const { width: SCREEN_W } = Dimensions.get('window');
 
@@ -150,17 +151,17 @@ const RentReportScreen: React.FC = () => {
       showsVerticalScrollIndicator={false}>
 
       {/* ── Header ── */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-          <MaterialCommunityIcons name="arrow-left" size={24} color={colors.text} />
-        </TouchableOpacity>
-        <Text style={[styles.screenTitle, { color: colors.text }]}>Rent Report</Text>
-        <TouchableOpacity
-          style={[styles.pdfBtn, { backgroundColor: colors.primary + '18', borderColor: colors.primary + '40' }]}
-          onPress={() => navigation.navigate('PDFExport', { source: 'rent' })}>
-          <MaterialCommunityIcons name="file-pdf-box" size={18} color={colors.primary} />
-        </TouchableOpacity>
-      </View>
+      <ScreenHeader
+        inline
+        title="Rent Report"
+        rightElement={
+          <TouchableOpacity
+            style={[styles.pdfBtn, { backgroundColor: colors.primary + '18', borderColor: colors.primary + '40' }]}
+            onPress={() => navigation.navigate('PDFExport', { source: 'rent' })}>
+            <MaterialCommunityIcons name="file-pdf-box" size={18} color={colors.primary} />
+          </TouchableOpacity>
+        }
+      />
 
       {/* ── Month Selector ── */}
       <View style={[styles.monthBar, { backgroundColor: colors.surface, borderColor: colors.border }]}>
@@ -592,20 +593,6 @@ const styles = StyleSheet.create({
   content: { paddingHorizontal: 16 },
 
   // Header
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 12,
-    gap: 12,
-  },
-  backBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  screenTitle: { fontSize: 24, fontWeight: '800', letterSpacing: -0.5, flex: 1 },
   pdfBtn: {
     width: 40,
     height: 40,
