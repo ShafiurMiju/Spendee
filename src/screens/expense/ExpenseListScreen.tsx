@@ -244,6 +244,13 @@ const ExpenseListScreen: React.FC = () => {
         </Text>
       </AnimatedPressable>
 
+      <AnimatedPressable
+        scaleValue={0.95}
+        onPress={() => navigation.navigate('VoiceEntry', { defaultKind: 'expense' })}
+        style={[styles.voiceFab, { backgroundColor: colors.surface, borderColor: colors.border, bottom: insets.bottom + 92 }]}>
+        <MaterialCommunityIcons name="microphone-message" size={20} color={colors.primary} />
+      </AnimatedPressable>
+
       {/* ── Filter Modal ── */}
       <Modal
         visible={showFilterModal}
@@ -489,6 +496,21 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
   },
   fabText: { fontSize: 15, fontWeight: '700' },
+  voiceFab: {
+    position: 'absolute',
+    right: 20,
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.18,
+    shadowRadius: 6,
+  },
 
   // Modal
   modalOverlay: { flex: 1, justifyContent: 'flex-end' },

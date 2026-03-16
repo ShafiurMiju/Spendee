@@ -7,3 +7,4 @@ export * from './offlineService';
 export * from './tenantService';
 export * from './rentService';
 export * from './incomeService';
+export * from './voiceEntryService';
