@@ -16,7 +16,8 @@ import { useAppTheme } from '../../contexts/ThemeContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Input, Button, AlertModal } from '../../components/common';
 import { addRentCost, updateRentCost } from '../../services/rentService';
-import { RentCostInput, RootStackParamList } from '../../types';
+import { getOwners } from '../../services/ownerService';
+import { RentCostInput, RootStackParamList, Owner } from '../../types';
 import { DEFAULT_RENT_COST_CATEGORIES, RENT_COST_CATEGORY_ICONS, DEFAULT_RENT_COST_ICON } from '../../constants/rent';
 import { AlertModalConfig } from '../../components/common/AlertModal';
 import { toMonthKey } from '../../utils/formatting';
@@ -44,6 +45,8 @@ const AddRentCostScreen: React.FC = () => {
     editingCost ? new Date(editingCost.date) : new Date(),
   );
   const [note, setNote] = useState(editingCost?.note ?? '');
+  const [ownerOnly, setOwnerOnly] = useState(editingCost?.ownerOnly ?? '');
+  const [owners, setOwners] = useState<Owner[]>([]);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [saving, setSaving] = useState(false);
   const [alertConfig, setAlertConfig] = useState<AlertModalConfig | null>(null);
@@ -52,6 +55,7 @@ const AddRentCostScreen: React.FC = () => {
     navigation.setOptions({
       title: isEditing ? t('rent.editCost') : t('rent.addCost'),
     });
+    getOwners().then(setOwners);
   }, [navigation, isEditing, t]);
 
   const validate = (): boolean => {
@@ -89,6 +93,7 @@ const AddRentCostScreen: React.FC = () => {
         date: date.getTime(),
         month: toMonthKey(date.getTime()),
         note: note.trim(),
+        ownerOnly,
       };
 
       if (isEditing && editingCost) {
@@ -251,6 +256,58 @@ const AddRentCostScreen: React.FC = () => {
         numberOfLines={3}
         style={{ height: 80, textAlignVertical: 'top' }}
       />
+
+      {/* ── Owner-Only Expense ── */}
+      {owners.length > 0 && (
+        <>
+          <Text style={[styles.label, { color: colors.textSecondary }]}>
+            {t('rent.ownerOnlyExpense')}
+          </Text>
+          <View style={styles.categoryGrid}>
+            <TouchableOpacity
+              style={[
+                styles.categoryChip,
+                {
+                  backgroundColor: ownerOnly === '' ? colors.primary : colors.surface,
+                  borderColor: colors.border,
+                },
+              ]}
+              onPress={() => setOwnerOnly('')}>
+              <MaterialCommunityIcons
+                name="account-group"
+                size={14}
+                color={ownerOnly === '' ? colors.textInverse : colors.text}
+                style={{ marginRight: 4 }}
+              />
+              <Text style={{ color: ownerOnly === '' ? colors.textInverse : colors.text, fontSize: 13 }}>
+                {t('rent.sharedByAll')}
+              </Text>
+            </TouchableOpacity>
+            {owners.map(owner => (
+              <TouchableOpacity
+                key={owner.id}
+                style={[
+                  styles.categoryChip,
+                  {
+                    backgroundColor: ownerOnly === owner.id ? colors.primary : colors.surface,
+                    borderColor: colors.border,
+                  },
+                ]}
+                onPress={() => setOwnerOnly(owner.id)}>
+                <MaterialCommunityIcons
+                  name="account-tie"
+                  size={14}
+                  color={ownerOnly === owner.id ? colors.textInverse : colors.text}
+                  style={{ marginRight: 4 }}
+                />
+                <Text style={{ color: ownerOnly === owner.id ? colors.textInverse : colors.text, fontSize: 13 }}>
+                  {owner.name}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </>
+      )}
 
       <Button
         title={isEditing ? t('common.save') : t('rent.addCost')}

@@ -9,8 +9,10 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Button, Card, LoadingOverlay, AlertModal, EmptyState } from '../../components/common';
 import { getTenant, deactivateTenant } from '../../services/tenantService';
 import { getPaymentsByTenant } from '../../services/rentService';
-import { Tenant, RentPayment, RootStackParamList } from '../../types';
-import { formatCurrency, formatDate } from '../../utils/formatting';
+import { getFlats } from '../../services/flatService';
+import { getOwners } from '../../services/ownerService';
+import { Tenant, RentPayment, RootStackParamList, Flat, Owner } from '../../types';
+import { formatCurrency, formatDate, toMonthKey } from '../../utils/formatting';
 import { AlertModalConfig } from '../../components/common/AlertModal';
 
 type NavProp = NativeStackNavigationProp<RootStackParamList, 'TenantDetails'>;
@@ -26,6 +28,8 @@ const TenantDetailsScreen: React.FC = () => {
 
   const [tenant, setTenant] = useState<Tenant | null>(null);
   const [payments, setPayments] = useState<RentPayment[]>([]);
+  const [flat, setFlat] = useState<Flat | null>(null);
+  const [owner, setOwner] = useState<Owner | null>(null);
   const [loading, setLoading] = useState(true);
   const [alertConfig, setAlertConfig] = useState<AlertModalConfig | null>(null);
 
@@ -36,12 +40,21 @@ const TenantDetailsScreen: React.FC = () => {
 
   const loadData = async () => {
     try {
-      const [tenantData, paymentData] = await Promise.all([
+      const [tenantData, paymentData, flatsData, ownersData] = await Promise.all([
         getTenant(route.params.tenantId),
         getPaymentsByTenant(route.params.tenantId),
+        getFlats(),
+        getOwners(),
       ]);
       setTenant(tenantData);
       setPayments(paymentData);
+      if (tenantData) {
+        const f = flatsData.find(fl => fl.id === tenantData.flatId) ?? null;
+        setFlat(f);
+        if (f) {
+          setOwner(ownersData.find(o => o.id === f.ownerId) ?? null);
+        }
+      }
     } catch (e) {
       console.warn('TenantDetails loadData error:', e);
     } finally {
@@ -96,9 +109,16 @@ const TenantDetailsScreen: React.FC = () => {
 
   const renderPayment = ({ item }: { item: RentPayment }) => (
     <View style={[styles.paymentRow, { borderBottomColor: colors.border }]}>
-      <Text style={[styles.paymentMonth, { color: colors.text }]}>{item.month}</Text>
+      <View>
+        <Text style={[styles.paymentMonth, { color: colors.text }]}>{item.month}</Text>
+        {item.dueAmount > 0 && (
+          <Text style={[styles.paymentDue, { color: colors.error }]}>
+            {t('rent.dueAmount')}: {formatCurrency(item.dueAmount)}
+          </Text>
+        )}
+      </View>
       <View style={styles.paymentRight}>
-        <Text style={[styles.paymentAmount, { color: colors.text }]}>
+        <Text style={[styles.paymentAmount, { color: item.dueAmount > 0 ? '#FBBF24' : colors.success }]}>
           {formatCurrency(item.amount)}
         </Text>
         <Text style={[styles.paymentDate, { color: colors.textSecondary }]}>
@@ -119,34 +139,60 @@ const TenantDetailsScreen: React.FC = () => {
         <>
           <Card>
             <DetailRow icon="account-outline" label={t('rent.name')} value={tenant.name} colors={colors} />
-            <DetailRow icon="door" label={t('rent.flatNumber')} value={tenant.flatNumber} colors={colors} />
+            <DetailRow icon="door" label={t('rent.flatNumber')} value={flat?.flatNumber ?? '—'} colors={colors} />
+            <DetailRow icon="account-tie-outline" label={t('rent.ownerName')} value={owner?.name ?? '—'} colors={colors} />
             <DetailRow icon="cash" label={t('rent.rentAmount')} value={formatCurrency(tenant.rentAmount)} colors={colors} />
+            {flat?.billBreakdown && (
+              <>
+                <DetailRow icon="home-outline" label={t('rent.baseRent')} value={formatCurrency(flat.billBreakdown.baseRent)} colors={colors} />
+                <DetailRow icon="fire" label={t('rent.gasBill')} value={formatCurrency(flat.billBreakdown.gasBill)} colors={colors} />
+                <DetailRow icon="broom" label={t('rent.cleaningBill')} value={formatCurrency(flat.billBreakdown.cleaningBill)} colors={colors} />
+                <DetailRow icon="water" label={t('rent.waterBill')} value={formatCurrency(flat.billBreakdown.waterBill)} colors={colors} />
+                <DetailRow icon="dots-horizontal" label={t('rent.otherBill')} value={formatCurrency(flat.billBreakdown.otherBill)} colors={colors} />
+              </>
+            )}
             <DetailRow icon="phone-outline" label={t('rent.phone')} value={tenant.phone} colors={colors} />
+            <DetailRow
+              icon="calendar-month-outline"
+              label={t('rent.joinMonth')}
+              value={tenant.joinMonth ?? toMonthKey(tenant.movedInAt)}
+              colors={colors}
+            />
             <DetailRow
               icon="circle-outline"
               label={t('common.status')}
               value={tenant.isActive ? t('rent.active') : t('rent.inactive')}
               colors={colors}
             />
+            {!tenant.isActive && tenant.leftAt && (
+              <DetailRow
+                icon="calendar-remove-outline"
+                label="Left On"
+                value={new Date(tenant.leftAt).toLocaleDateString()}
+                colors={colors}
+              />
+            )}
           </Card>
 
-          <View style={styles.actions}>
-            <Button
-              title={t('common.edit')}
-              iconName="pencil-outline"
-              onPress={() =>
-                navigation.navigate('AddTenant', { tenant })
-              }
-              style={styles.actionBtn}
-            />
-            <Button
-              title={t('rent.deactivate')}
-              iconName="account-off-outline"
-              variant="danger"
-              onPress={handleDeactivate}
-              style={styles.actionBtn}
-            />
-          </View>
+          {tenant.isActive && (
+            <View style={styles.actions}>
+              <Button
+                title={t('common.edit')}
+                iconName="pencil-outline"
+                onPress={() =>
+                  navigation.navigate('AddTenant', { tenant })
+                }
+                style={styles.actionBtn}
+              />
+              <Button
+                title={t('rent.deactivate')}
+                iconName="account-off-outline"
+                variant="danger"
+                onPress={handleDeactivate}
+                style={styles.actionBtn}
+              />
+            </View>
+          )}
 
           <Text style={[styles.sectionTitle, { color: colors.text }]}>
             {t('rent.paymentHistory')}
@@ -209,6 +255,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
   paymentMonth: { fontSize: 14, fontWeight: '600' },
+  paymentDue: { fontSize: 11, marginTop: 2 },
   paymentRight: { alignItems: 'flex-end' },
   paymentAmount: { fontSize: 14, fontWeight: '500' },
   paymentDate: { fontSize: 12, marginTop: 2 },

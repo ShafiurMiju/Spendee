@@ -7,6 +7,9 @@ export const COLLECTIONS = {
   RENT_PAYMENTS: 'rentPayments',
   RENT_COSTS: 'rentCosts',
   INCOME: 'income',
+  OWNERS: 'owners',
+  OWNER_CONTRIBUTIONS: 'ownerContributions',
+  FLATS: 'flats',
 } as const;
 
 export const ASYNC_STORAGE_KEYS = {

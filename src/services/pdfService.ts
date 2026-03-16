@@ -1,6 +1,6 @@
 import RNHTMLtoPDF from 'react-native-html-to-pdf';
 import Share from 'react-native-share';
-import { Expense, Income, Tenant, RentPayment, RentCost, DateRange, CategoryBreakdown } from '../types';
+import { Expense, Income, Tenant, Flat, Owner, RentPayment, RentCost, OwnerSettlement, DateRange, CategoryBreakdown } from '../types';
 import { formatCurrency, formatDate, getColorForIndex } from '../utils/formatting';
 
 interface PDFData {
@@ -229,8 +229,11 @@ export async function generateIncomePDF(data: IncomePDFData): Promise<string> {
 interface RentPDFData {
   month: string;
   tenants: Tenant[];
+  flats: Flat[];
+  owners: Owner[];
   payments: RentPayment[];
   costs: RentCost[];
+  ownerSettlements: OwnerSettlement[];
   totalExpected: number;
   totalCollected: number;
   totalCosts: number;
@@ -241,13 +244,17 @@ export async function generateRentPDF(data: RentPDFData): Promise<string> {
   const {
     month,
     tenants,
+    flats,
+    owners,
     payments,
     costs,
+    ownerSettlements,
     totalExpected,
     totalCollected,
     totalCosts,
     netIncome,
   } = data;
+  const getFlatNumber = (tn: Tenant) => flats.find(f => f.id === tn.flatId)?.flatNumber ?? '—';
 
   const [y, m] = month.split('-').map(Number);
   const monthLabel = new Date(y, m - 1).toLocaleDateString('en-US', {
@@ -266,10 +273,10 @@ export async function generateRentPDF(data: RentPDFData): Promise<string> {
       return `
         <tr>
           <td>${tn.name}</td>
-          <td>${tn.flatNumber}</td>
+          <td>${getFlatNumber(tn)}</td>
           <td style="text-align:right">${formatCurrency(tn.rentAmount)}</td>
           <td style="text-align:right;color:#22C55E;font-weight:600">${formatCurrency(pmt.amount)}</td>
-          <td style="color:#22C55E;font-weight:600">Paid</td>
+          <td style="text-align:right;color:#22C55E;font-weight:600">Paid</td>
         </tr>`;
     })
     .join('');
@@ -280,10 +287,10 @@ export async function generateRentPDF(data: RentPDFData): Promise<string> {
       tn => `
         <tr>
           <td>${tn.name}</td>
-          <td>${tn.flatNumber}</td>
+          <td>${getFlatNumber(tn)}</td>
           <td style="text-align:right">${formatCurrency(tn.rentAmount)}</td>
           <td style="text-align:right;color:#999">–</td>
-          <td style="color:#EF4444;font-weight:600">Due</td>
+          <td style="text-align:right;color:#EF4444;font-weight:600">Due</td>
         </tr>`,
     )
     .join('');
@@ -356,7 +363,7 @@ export async function generateRentPDF(data: RentPDFData): Promise<string> {
           <th>Flat</th>
           <th style="text-align:right">Rent</th>
           <th style="text-align:right">Paid</th>
-          <th>Status</th>
+          <th style="text-align:right">Status</th>
         </tr>
         ${paidRows}${unpaidRows}
       </table>
@@ -371,6 +378,31 @@ export async function generateRentPDF(data: RentPDFData): Promise<string> {
           <th style="text-align:right">Amount</th>
         </tr>
         ${costRows}
+      </table>
+      ` : ''}
+
+      ${ownerSettlements.length > 0 ? `
+      <h2>Owner Statement</h2>
+      <table>
+        <tr>
+          <th>Owner</th>
+          <th style="text-align:center">Flats</th>
+          <th style="text-align:right">Collected</th>
+          <th style="text-align:right">Shared Exp</th>
+          <th style="text-align:right">Own Exp</th>
+          <th style="text-align:right">Contributed</th>
+          <th style="text-align:right">Net</th>
+        </tr>
+        ${ownerSettlements.map(s => `
+          <tr>
+            <td>${s.ownerName}</td>
+            <td style="text-align:center">${s.flatCount}</td>
+            <td style="text-align:right;color:#22C55E;font-weight:600">${formatCurrency(s.totalCollected)}</td>
+            <td style="text-align:right;color:#EF4444">${formatCurrency(s.sharedExpenses)}</td>
+            <td style="text-align:right;color:#F59E0B">${s.ownExpenses > 0 ? formatCurrency(s.ownExpenses) : '–'}</td>
+            <td style="text-align:right;color:#3B82F6">${s.ownContribution > 0 ? formatCurrency(s.ownContribution) : '–'}</td>
+            <td style="text-align:right;font-weight:700;color:${s.netAmount >= 0 ? '#22C55E' : '#EF4444'}">${s.netAmount < 0 ? '-' : ''}${formatCurrency(Math.abs(s.netAmount))}</td>
+          </tr>`).join('')}
       </table>
       ` : ''}
 
@@ -558,15 +590,198 @@ export async function generateCombinedPDF(data: CombinedPDFData): Promise<string
   return file.filePath!;
 }
 
+// ─── Multi-Month Rent PDF ───────────────────────────────────────────────────
+
+interface MultiMonthRentPDFData {
+  months: string[]; // array of 'YYYY-MM' keys
+  tenantsByMonth: Record<string, Tenant[]>; // correct tenants per month
+  flats: Flat[];
+  paymentsByMonth: Record<string, RentPayment[]>;
+  costsByMonth: Record<string, RentCost[]>;
+}
+
+export async function generateMultiMonthRentPDF(data: MultiMonthRentPDFData): Promise<string> {
+  const { months, tenantsByMonth, flats, paymentsByMonth, costsByMonth } = data;
+  const getFlatNumber = (tn: Tenant) => flats.find(f => f.id === tn.flatId)?.flatNumber ?? '—';
+
+  const formatMonth = (m: string) => {
+    const [y, mo] = m.split('-').map(Number);
+    return new Date(y, mo - 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  };
+
+  const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+
+  let grandCollected = 0;
+  let grandExpected = 0;
+  let grandCosts = 0;
+
+  const monthSections = months.map(month => {
+    const tenants = tenantsByMonth[month] || [];
+    const payments = paymentsByMonth[month] || [];
+    const costs = costsByMonth[month] || [];
+    const totalExpected = tenants.reduce((s, t) => s + t.rentAmount, 0);
+    const totalCollected = payments.reduce((s, p) => s + p.amount, 0);
+    const totalCosts = costs.reduce((s, c) => s + c.amount, 0);
+    const netIncome = totalCollected - totalCosts;
+
+    grandCollected += totalCollected;
+    grandExpected += totalExpected;
+    grandCosts += totalCosts;
+
+    const tenantRows = tenants.map(tn => {
+      const pmt = payments.find(p => p.tenantId === tn.id);
+      const paid = pmt ? pmt.amount : 0;
+      const due = pmt ? (pmt.dueAmount || 0) : tn.rentAmount;
+      const status = pmt ? (due > 0 ? 'Partial' : 'Paid') : 'Due';
+      const statusColor = status === 'Paid' ? '#22C55E' : status === 'Partial' ? '#F59E0B' : '#EF4444';
+      return `
+        <tr>
+          <td>${tn.name}</td>
+          <td>${getFlatNumber(tn)}</td>
+          <td style="text-align:right">${formatCurrency(tn.rentAmount)}</td>
+          <td style="text-align:right;color:${paid > 0 ? '#22C55E' : '#999'};font-weight:600">${paid > 0 ? formatCurrency(paid) : '–'}</td>
+          <td style="text-align:right;color:${due > 0 ? '#EF4444' : '#999'}">${due > 0 ? formatCurrency(due) : '–'}</td>
+          <td style="color:${statusColor};font-weight:600">${status}</td>
+        </tr>`;
+    }).join('');
+
+    const costRows = costs.map(c => `
+      <tr>
+        <td>${formatDate(c.date)}</td>
+        <td>${c.title}</td>
+        <td>${cap(c.category)}</td>
+        <td style="text-align:right;color:#EF4444;font-weight:600">${formatCurrency(c.amount)}</td>
+      </tr>`).join('');
+
+    return `
+      <div class="month-section">
+        <h2>${formatMonth(month)}</h2>
+        <div class="summary-grid">
+          <div class="summary-card">
+            <div class="label">Expected</div>
+            <div class="value">${formatCurrency(totalExpected)}</div>
+          </div>
+          <div class="summary-card">
+            <div class="label">Collected</div>
+            <div class="value" style="color:#22C55E">${formatCurrency(totalCollected)}</div>
+          </div>
+          <div class="summary-card">
+            <div class="label">Costs</div>
+            <div class="value" style="color:#EF4444">${formatCurrency(totalCosts)}</div>
+          </div>
+          <div class="summary-card">
+            <div class="label">Net</div>
+            <div class="value" style="color:${netIncome >= 0 ? '#22C55E' : '#EF4444'}">${netIncome < 0 ? '-' : ''}${formatCurrency(Math.abs(netIncome))}</div>
+          </div>
+        </div>
+
+        <h3>Tenants (${tenants.length})</h3>
+        <table>
+          <tr>
+            <th>Name</th><th>Flat</th><th style="text-align:right">Rent</th><th style="text-align:right">Paid</th><th style="text-align:right">Due</th><th>Status</th>
+          </tr>
+          ${tenantRows}
+        </table>
+
+        ${costs.length > 0 ? `
+        <h3>Costs (${costs.length})</h3>
+        <table>
+          <tr><th>Date</th><th>Title</th><th>Category</th><th style="text-align:right">Amount</th></tr>
+          ${costRows}
+        </table>` : ''}
+      </div>
+    `;
+  }).join('');
+
+  const grandNet = grandCollected - grandCosts;
+  const startLabel = formatMonth(months[0]);
+  const endLabel = formatMonth(months[months.length - 1]);
+
+  const html = `
+    <html>
+    <head>
+      <style>
+        body { font-family: -apple-system, Helvetica, Arial, sans-serif; padding: 24px; color: #1a1a2e; }
+        h1 { color: #4A90D9; font-size: 28px; }
+        h2 { color: #4A90D9; font-size: 20px; margin-top: 32px; border-bottom: 2px solid #4A90D9; padding-bottom: 6px; }
+        h3 { color: #333; font-size: 16px; margin-top: 16px; }
+        .meta { color: #666; font-size: 14px; margin-bottom: 16px; }
+        .summary-grid { display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
+        .summary-card { background: #f5f7fa; border-radius: 10px; padding: 12px; flex: 1; min-width: 100px; text-align: center; }
+        .summary-card .label { font-size: 10px; color: #6b7280; text-transform: uppercase; }
+        .summary-card .value { font-size: 18px; font-weight: 800; margin-top: 4px; }
+        .grand-summary { background: #1E3A5F; color: #fff; border-radius: 14px; padding: 20px; margin-bottom: 24px; }
+        .grand-summary .label { color: rgba(255,255,255,0.6); font-size: 10px; text-transform: uppercase; }
+        .grand-summary .value { color: #fff; font-size: 22px; font-weight: 800; }
+        table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+        th { background: #4A90D9; color: #fff; padding: 8px 6px; text-align: left; font-size: 12px; }
+        td { padding: 7px 6px; font-size: 12px; border-bottom: 1px solid #e5e7eb; }
+        tr:nth-child(even) { background: #f9fafb; }
+        .month-section { page-break-inside: avoid; }
+        .footer { margin-top: 32px; text-align: center; color: #9ca3af; font-size: 11px; }
+      </style>
+    </head>
+    <body>
+      <h1>Spendee – Multi-Month Rent Report</h1>
+      <p class="meta">${startLabel} – ${endLabel} (${months.length} months)</p>
+
+      <div class="grand-summary">
+        <div class="summary-grid">
+          <div style="flex:1;text-align:center">
+            <div class="label">Total Expected</div>
+            <div class="value">${formatCurrency(grandExpected)}</div>
+          </div>
+          <div style="flex:1;text-align:center">
+            <div class="label">Total Collected</div>
+            <div class="value" style="color:#4ADE80">${formatCurrency(grandCollected)}</div>
+          </div>
+          <div style="flex:1;text-align:center">
+            <div class="label">Total Costs</div>
+            <div class="value" style="color:#F87171">${formatCurrency(grandCosts)}</div>
+          </div>
+          <div style="flex:1;text-align:center">
+            <div class="label">Grand Net</div>
+            <div class="value" style="color:${grandNet >= 0 ? '#4ADE80' : '#F87171'}">${grandNet < 0 ? '-' : ''}${formatCurrency(Math.abs(grandNet))}</div>
+          </div>
+        </div>
+      </div>
+
+      ${monthSections}
+
+      <div class="footer">
+        Generated by Spendee · ${new Date().toLocaleDateString()}
+      </div>
+    </body>
+    </html>
+  `;
+
+  const options = {
+    html,
+    fileName: `Spendee_Rent_${months[0]}_to_${months[months.length - 1]}`.replace(/\s/g, '_'),
+    directory: 'Documents',
+  };
+
+  const file = await RNHTMLtoPDF.convert(options);
+  return file.filePath!;
+}
+
 /**
  * Share the generated PDF via the native share sheet.
  */
 export async function sharePDF(filePath: string): Promise<void> {
-  await Share.open({
-    url: `file://${filePath}`,
-    type: 'application/pdf',
-    title: 'Spendee Expense Report',
-  });
+  try {
+    await Share.open({
+      url: `file://${filePath}`,
+      type: 'application/pdf',
+      title: 'Spendee Expense Report',
+    });
+  } catch (e: any) {
+    // User dismissed the share sheet — not an error
+    if (e?.message?.includes('User did not share') || e?.message?.includes('CANCELLED')) {
+      return;
+    }
+    throw e;
+  }
 }
 
 /**

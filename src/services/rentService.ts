@@ -2,6 +2,7 @@ import firestore from '@react-native-firebase/firestore';
 import auth from '@react-native-firebase/auth';
 import { COLLECTIONS } from '../constants';
 import { RentPayment, RentPaymentInput, RentCost, RentCostInput } from '../types';
+import { FirebaseFirestoreTypes } from '@react-native-firebase/firestore';
 
 const paymentsRef = () => firestore().collection(COLLECTIONS.RENT_PAYMENTS);
 const costsRef = () => firestore().collection(COLLECTIONS.RENT_COSTS);
@@ -196,6 +197,3 @@ export function onCostsSnapshot(
     error => onError?.(error),
   );
 }
-
-// We need this import for the query type
-import { FirebaseFirestoreTypes } from '@react-native-firebase/firestore';

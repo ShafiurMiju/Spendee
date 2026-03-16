@@ -14,9 +14,11 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useAppTheme } from '../../contexts/ThemeContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { getTenants } from '../../services/tenantService';
+import { getTenantsByMonth } from '../../services/tenantService';
 import { getPaymentsByMonth, getCostsByMonth } from '../../services/rentService';
-import { Tenant, RentPayment, RentCost, RootStackParamList } from '../../types';
+import { getOwners, getContributionsByMonth, calculateOwnerSettlements } from '../../services/ownerService';
+import { getFlats } from '../../services/flatService';
+import { Tenant, RentPayment, RentCost, RootStackParamList, Owner, OwnerContribution, OwnerSettlement, Flat } from '../../types';
 import { formatCurrency, toMonthKey } from '../../utils/formatting';
 import { MONTHS } from '../../constants/categories';
 import { RENT_COST_CATEGORY_ICONS, DEFAULT_RENT_COST_ICON } from '../../constants/rent';
@@ -42,6 +44,9 @@ const RentReportScreen: React.FC = () => {
   const [tenants, setTenants] = useState<Tenant[]>([]);
   const [payments, setPayments] = useState<RentPayment[]>([]);
   const [costs, setCosts] = useState<RentCost[]>([]);
+  const [owners, setOwners] = useState<Owner[]>([]);
+  const [flats, setFlats] = useState<Flat[]>([]);
+  const [settlements, setSettlements] = useState<OwnerSettlement[]>([]);
   const [trendLabels, setTrendLabels] = useState<string[]>([]);
   const [trendCollected, setTrendCollected] = useState<number[]>([]);
   const [trendCosts, setTrendCosts] = useState<number[]>([]);
@@ -60,14 +65,27 @@ const RentReportScreen: React.FC = () => {
 
   const loadData = useCallback(async () => {
     try {
-      const [t, p, c] = await Promise.all([
-        getTenants(),
+      const [t, p, c, o, fl] = await Promise.all([
+        getTenantsByMonth(month),
         getPaymentsByMonth(month),
         getCostsByMonth(month),
+        getOwners(),
+        getFlats(),
       ]);
       setTenants(t);
       setPayments(p);
       setCosts(c);
+      setOwners(o);
+      setFlats(fl);
+
+      // Calculate owner settlements
+      if (o.length > 0) {
+        const contributions = await getContributionsByMonth(month);
+        const s = calculateOwnerSettlements(o, fl, t, p, c, contributions);
+        setSettlements(s);
+      } else {
+        setSettlements([]);
+      }
     } catch (e) {
       console.warn('RentReport load error:', e);
     }
@@ -236,6 +254,7 @@ const RentReportScreen: React.FC = () => {
           {/* Paid tenants */}
           {paidTenants.map(tn => {
             const pmt = payments.find(p => p.tenantId === tn.id);
+            const flat = flats.find(f => f.id === tn.flatId);
             return (
               <View key={tn.id} style={styles.tenantRow}>
                 <View style={[styles.tenantStatus, { backgroundColor: '#4ADE8025' }]}>
@@ -243,7 +262,7 @@ const RentReportScreen: React.FC = () => {
                 </View>
                 <View style={styles.tenantInfo}>
                   <Text style={[styles.tenantName, { color: colors.text }]}>{tn.name}</Text>
-                  <Text style={[styles.tenantFlat, { color: colors.textSecondary }]}>Flat {tn.flatNumber}</Text>
+                  <Text style={[styles.tenantFlat, { color: colors.textSecondary }]}>Flat {flat?.flatNumber ?? '—'}</Text>
                 </View>
                 <View style={styles.tenantAmountCol}>
                   <Text style={[styles.tenantPaid, { color: colors.success }]}>
@@ -255,23 +274,26 @@ const RentReportScreen: React.FC = () => {
             );
           })}
           {/* Unpaid tenants */}
-          {unpaidTenants.map(tn => (
-            <View key={tn.id} style={styles.tenantRow}>
-              <View style={[styles.tenantStatus, { backgroundColor: '#F8717125' }]}>
-                <MaterialCommunityIcons name="clock-outline" size={16} color={colors.error} />
+          {unpaidTenants.map(tn => {
+            const flat = flats.find(f => f.id === tn.flatId);
+            return (
+              <View key={tn.id} style={styles.tenantRow}>
+                <View style={[styles.tenantStatus, { backgroundColor: '#F8717125' }]}>
+                  <MaterialCommunityIcons name="clock-outline" size={16} color={colors.error} />
+                </View>
+                <View style={styles.tenantInfo}>
+                  <Text style={[styles.tenantName, { color: colors.text }]}>{tn.name}</Text>
+                  <Text style={[styles.tenantFlat, { color: colors.textSecondary }]}>Flat {flat?.flatNumber ?? '—'}</Text>
+                </View>
+                <View style={styles.tenantAmountCol}>
+                  <Text style={[styles.tenantUnpaid, { color: colors.error }]}>
+                    {formatCurrency(tn.rentAmount)}
+                  </Text>
+                  <Text style={[styles.tenantLabel, { color: colors.error }]}>Due</Text>
+                </View>
               </View>
-              <View style={styles.tenantInfo}>
-                <Text style={[styles.tenantName, { color: colors.text }]}>{tn.name}</Text>
-                <Text style={[styles.tenantFlat, { color: colors.textSecondary }]}>Flat {tn.flatNumber}</Text>
-              </View>
-              <View style={styles.tenantAmountCol}>
-                <Text style={[styles.tenantUnpaid, { color: colors.error }]}>
-                  {formatCurrency(tn.rentAmount)}
-                </Text>
-                <Text style={[styles.tenantLabel, { color: colors.error }]}>Due</Text>
-              </View>
-            </View>
-          ))}
+            );
+          })}
 
           {/* Per-tenant collection bar chart */}
           {tenants.length > 1 && (
@@ -283,7 +305,11 @@ const RentReportScreen: React.FC = () => {
               </View>
               <BarChart
                 data={{
-                  labels: tenants.map(tn => tn.flatNumber.length > 4 ? tn.flatNumber.slice(0, 4) : tn.flatNumber),
+                  labels: tenants.map(tn => {
+                    const flat = flats.find(f => f.id === tn.flatId);
+                    const fn = flat?.flatNumber ?? '?';
+                    return fn.length > 4 ? fn.slice(0, 4) : fn;
+                  }),
                   datasets: [{
                     data: tenants.map(tn => {
                       const pmt = payments.find(p => p.tenantId === tn.id);
@@ -377,6 +403,97 @@ const RentReportScreen: React.FC = () => {
           <Text style={[styles.emptyText, { color: colors.textSecondary }]}>No costs this month</Text>
         </View>
       )}
+
+      {/* ══ OWNER SETTLEMENT ══ */}
+      {settlements.length > 0 && (
+        <>
+          <View style={styles.sectionHeader}>
+            <View style={[styles.sectionAccent, { backgroundColor: '#60A5FA' }]} />
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>Owner Settlement</Text>
+          </View>
+          <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            {settlements.map(s => (
+              <View key={s.ownerId} style={[styles.settlementBlock, { borderBottomColor: colors.border }]}>
+                <View style={styles.tenantRow}>
+                  <View style={[styles.tenantStatus, { backgroundColor: '#60A5FA25' }]}>
+                    <MaterialCommunityIcons name="account-tie" size={16} color="#60A5FA" />
+                  </View>
+                  <View style={styles.tenantInfo}>
+                    <Text style={[styles.tenantName, { color: colors.text }]}>{s.ownerName}</Text>
+                    <Text style={[styles.tenantFlat, { color: colors.textSecondary }]}>
+                      {s.flatCount} {s.flatCount === 1 ? 'flat' : 'flats'}
+                    </Text>
+                  </View>
+                  <View style={styles.tenantAmountCol}>
+                    <Text style={[styles.tenantPaid, { color: s.netAmount >= 0 ? colors.success : colors.error }]}>
+                      {s.netAmount < 0 ? '-' : ''}{formatCurrency(Math.abs(s.netAmount))}
+                    </Text>
+                    <Text style={[styles.tenantLabel, { color: s.netAmount >= 0 ? colors.success : colors.error }]}>
+                      {s.netAmount >= 0 ? 'Gets' : 'Owes'}
+                    </Text>
+                  </View>
+                </View>
+                <View style={styles.settlementDetails}>
+                  <View style={styles.settlementRow}>
+                    <MaterialCommunityIcons name="cash-check" size={14} color="#4ADE80" />
+                    <Text style={[styles.settlementLabel, { color: colors.textSecondary }]}>Rent Collected</Text>
+                    <Text style={[styles.settlementValue, { color: '#4ADE80' }]}>+{formatCurrency(s.totalCollected)}</Text>
+                  </View>
+                  <View style={styles.settlementRow}>
+                    <MaterialCommunityIcons name="cash-minus" size={14} color="#F87171" />
+                    <Text style={[styles.settlementLabel, { color: colors.textSecondary }]}>Shared Expenses</Text>
+                    <Text style={[styles.settlementValue, { color: '#F87171' }]}>-{formatCurrency(s.sharedExpenses)}</Text>
+                  </View>
+                  {s.ownExpenses > 0 && (
+                    <View style={styles.settlementRow}>
+                      <MaterialCommunityIcons name="account-cash" size={14} color="#FBBF24" />
+                      <Text style={[styles.settlementLabel, { color: colors.textSecondary }]}>Own Expenses</Text>
+                      <Text style={[styles.settlementValue, { color: '#FBBF24' }]}>-{formatCurrency(s.ownExpenses)}</Text>
+                    </View>
+                  )}
+                  {s.ownContribution > 0 && (
+                    <View style={styles.settlementRow}>
+                      <MaterialCommunityIcons name="cash-plus" size={14} color="#60A5FA" />
+                      <Text style={[styles.settlementLabel, { color: colors.textSecondary }]}>Own Contribution</Text>
+                      <Text style={[styles.settlementValue, { color: '#60A5FA' }]}>+{formatCurrency(s.ownContribution)}</Text>
+                    </View>
+                  )}
+                </View>
+              </View>
+            ))}
+          </View>
+        </>
+      )}
+
+      {/* ══ MULTI-MONTH PDF ══ */}
+      <TouchableOpacity
+        style={[styles.exportCta, { backgroundColor: '#A78BFA', marginTop: 8, marginBottom: 8 }]}
+        onPress={() => navigation.navigate('RentPDFExport')}
+        activeOpacity={0.85}>
+        <View style={styles.exportCtaLeft}>
+          <MaterialCommunityIcons name="file-document-multiple-outline" size={28} color="rgba(255,255,255,0.9)" />
+          <View>
+            <Text style={styles.exportCtaTitle}>Multi-Month PDF</Text>
+            <Text style={styles.exportCtaSub}>Generate rent report for multiple months</Text>
+          </View>
+        </View>
+        <MaterialCommunityIcons name="chevron-right" size={22} color="rgba(255,255,255,0.5)" />
+      </TouchableOpacity>
+
+      {/* ══ OWNER STATEMENT PDF ══ */}
+      <TouchableOpacity
+        style={[styles.exportCta, { backgroundColor: '#60A5FA', marginTop: 0, marginBottom: 8 }]}
+        onPress={() => navigation.navigate('PDFExport', { source: 'rent' })}
+        activeOpacity={0.85}>
+        <View style={styles.exportCtaLeft}>
+          <MaterialCommunityIcons name="account-tie-outline" size={28} color="rgba(255,255,255,0.9)" />
+          <View>
+            <Text style={styles.exportCtaTitle}>Owner Statement PDF</Text>
+            <Text style={styles.exportCtaSub}>Download report with owner settlement details</Text>
+          </View>
+        </View>
+        <MaterialCommunityIcons name="chevron-right" size={22} color="rgba(255,255,255,0.5)" />
+      </TouchableOpacity>
 
       {/* ══ 6-MONTH TREND ══ */}
       {(trendCollected.some(v => v > 0) || trendCosts.some(v => v > 0)) && (
@@ -627,6 +744,25 @@ const styles = StyleSheet.create({
   tenantPaid: { fontSize: 14, fontWeight: '700' },
   tenantUnpaid: { fontSize: 14, fontWeight: '700' },
   tenantLabel: { fontSize: 10, fontWeight: '600', marginTop: 1 },
+
+  // Settlement details
+  settlementBlock: {
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    paddingBottom: 10,
+    marginBottom: 6,
+  },
+  settlementDetails: {
+    paddingLeft: 42,
+    paddingTop: 4,
+    gap: 4,
+  },
+  settlementRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  settlementLabel: { flex: 1, fontSize: 12 },
+  settlementValue: { fontSize: 13, fontWeight: '600' },
 
   // Bar rows
   barRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 10, marginBottom: 14 },

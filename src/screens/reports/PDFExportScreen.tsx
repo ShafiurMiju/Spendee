@@ -16,7 +16,9 @@ import { useAppTheme } from '../../contexts/ThemeContext';
 import { Button, Card, AlertModal } from '../../components/common';
 import { getExpenses } from '../../services/expenseService';
 import { getIncomes } from '../../services/incomeService';
-import { getTenants } from '../../services/tenantService';
+import { getTenants, getTenantsByMonth } from '../../services/tenantService';
+import { getFlats } from '../../services/flatService';
+import { getOwners, getContributionsByMonth, calculateOwnerSettlements } from '../../services/ownerService';
 import { getPaymentsByMonth, getCostsByMonth } from '../../services/rentService';
 import {
   generateExpensePDF,
@@ -219,10 +221,13 @@ const PDFExportScreen: React.FC = () => {
       } else {
         // rent mode — uses month key from selected dates
         const monthKey = toMonthKey(startDate.getTime());
-        const [tenants, payments, costs] = await Promise.all([
-          getTenants(),
+        const [tenants, flats, payments, costs, owners, contributions] = await Promise.all([
+          getTenantsByMonth(monthKey),
+          getFlats(),
           getPaymentsByMonth(monthKey),
           getCostsByMonth(monthKey),
+          getOwners(),
+          getContributionsByMonth(toMonthKey(startDate.getTime())),
         ]);
 
         if (tenants.length === 0) {
@@ -236,6 +241,7 @@ const PDFExportScreen: React.FC = () => {
           return;
         }
 
+        const ownerSettlements = calculateOwnerSettlements(owners, flats, tenants, payments, costs, contributions);
         const totalExpected = tenants.reduce((s, tn) => s + tn.rentAmount, 0);
         const totalCollected = payments.reduce((s, p) => s + p.amount, 0);
         const totalCosts = costs.reduce((s, c) => s + c.amount, 0);
@@ -243,8 +249,11 @@ const PDFExportScreen: React.FC = () => {
         filePath = await generateRentPDF({
           month: monthKey,
           tenants,
+          flats,
+          owners,
           payments,
           costs,
+          ownerSettlements,
           totalExpected,
           totalCollected,
           totalCosts,

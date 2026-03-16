@@ -1,10 +1,11 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
   TouchableOpacity,
+  TextInput,
 } from 'react-native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useTranslation } from 'react-i18next';
@@ -14,9 +15,10 @@ import { useAppTheme } from '../../contexts/ThemeContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { EmptyState, AlertModal } from '../../components/common';
 import { TenantListItem, RentCostListItem } from '../../components/rent';
-import { onTenantsSnapshot } from '../../services/tenantService';
+import { onAllTenantsSnapshot } from '../../services/tenantService';
 import { onPaymentsSnapshot, onCostsSnapshot, addRentPayment } from '../../services/rentService';
-import { Tenant, RentPayment, RentCost, RootStackParamList } from '../../types';
+import { onFlatsSnapshot } from '../../services/flatService';
+import { Tenant, RentPayment, RentCost, Flat, RootStackParamList } from '../../types';
 import { AlertModalConfig } from '../../components/common/AlertModal';
 import { formatCurrency, toMonthKey } from '../../utils/formatting';
 
@@ -37,14 +39,22 @@ const RentDashboardScreen: React.FC = () => {
   const cFaint  = theme.dark ? 'rgba(255,255,255,0.1)' : colors.border;
 
   const [selectedMonth, setSelectedMonth] = useState(toMonthKey(Date.now()));
-  const [tenants, setTenants] = useState<Tenant[]>([]);
+  const [allTenants, setAllTenants] = useState<Tenant[]>([]);
+  const [flats, setFlats] = useState<Flat[]>([]);
   const [payments, setPayments] = useState<RentPayment[]>([]);
   const [costs, setCosts] = useState<RentCost[]>([]);
   const [alertConfig, setAlertConfig] = useState<AlertModalConfig | null>(null);
+  const [paymentModalVisible, setPaymentModalVisible] = useState(false);
+  const [paymentTenant, setPaymentTenant] = useState<Tenant | null>(null);
+  const [paymentAmount, setPaymentAmount] = useState('');
 
   useEffect(() => {
-    const unsubscribe = onTenantsSnapshot(setTenants);
-    return unsubscribe;
+    const unsubTenants = onAllTenantsSnapshot(setAllTenants);
+    const unsubFlats = onFlatsSnapshot(setFlats);
+    return () => {
+      unsubTenants();
+      unsubFlats();
+    };
   }, []);
 
   useEffect(() => {
@@ -61,6 +71,34 @@ const RentDashboardScreen: React.FC = () => {
     const d = new Date(y, m - 1 + dir, 1);
     setSelectedMonth(toMonthKey(d.getTime()));
   };
+
+  // Derive month-aware current & past tenants
+  const { tenants, pastTenants } = useMemo(() => {
+    const [y, m] = selectedMonth.split('-').map(Number);
+    const monthStart = new Date(y, m - 1, 1).getTime();
+    const monthEnd   = new Date(y, m, 0, 23, 59, 59, 999).getTime();
+
+    const current: Tenant[] = [];
+    const past: Tenant[] = [];
+
+    for (const t of allTenants) {
+      const movedIn = t.movedInAt ?? t.createdAt;
+      if (movedIn > monthEnd) continue; // hasn't moved in yet
+
+      // Active during this month: still active OR left during/after this month
+      if (t.isActive || (t.leftAt && t.leftAt >= monthStart)) {
+        current.push(t);
+      } else if (t.leftAt && t.leftAt < monthStart) {
+        // Left before this month began → past tenant
+        past.push(t);
+      }
+    }
+
+    current.sort((a, b) => a.name.localeCompare(b.name));
+    past.sort((a, b) => (b.leftAt ?? b.createdAt) - (a.leftAt ?? a.createdAt));
+
+    return { tenants: current, pastTenants: past };
+  }, [allTenants, selectedMonth]);
 
   const getMonthLabel = (): string => {
     const [y, m] = selectedMonth.split('-').map(Number);
@@ -81,45 +119,59 @@ const RentDashboardScreen: React.FC = () => {
 
   const handleMarkPaid = useCallback(
     (tenant: Tenant) => {
+      setPaymentTenant(tenant);
+      setPaymentAmount(String(tenant.rentAmount));
+      setPaymentModalVisible(true);
+    },
+    [],
+  );
+
+  const confirmPayment = useCallback(async () => {
+    if (!paymentTenant) return;
+    const amt = Number(paymentAmount);
+    if (!amt || isNaN(amt) || amt <= 0) {
       setAlertConfig({
         visible: true,
-        title: t('rent.markAsPaid'),
-        message: t('rent.markAsPaidConfirm', {
-          amount: formatCurrency(tenant.rentAmount),
-          name: tenant.name,
-        }),
-        type: 'confirm',
-        onConfirm: async () => {
-          try {
-            await addRentPayment({
-              tenantId: tenant.id,
-              month: selectedMonth,
-              amount: tenant.rentAmount,
-              paymentDate: Date.now(),
-              note: '',
-            });
-            setAlertConfig({
-              visible: true,
-              title: t('common.success'),
-              message: t('rent.paymentRecorded'),
-              type: 'success',
-              onConfirm: () => setAlertConfig(null),
-            });
-          } catch (e: any) {
-            setAlertConfig({
-              visible: true,
-              title: t('common.error'),
-              message: e.message,
-              type: 'error',
-              onConfirm: () => setAlertConfig(null),
-            });
-          }
-        },
-        onCancel: () => setAlertConfig(null),
+        title: t('common.error'),
+        message: 'Please enter a valid amount',
+        type: 'error',
+        onConfirm: () => setAlertConfig(null),
       });
-    },
-    [selectedMonth, t],
-  );
+      return;
+    }
+    setPaymentModalVisible(false);
+    try {
+      const expected = paymentTenant.rentAmount;
+      const due = expected - amt;
+      await addRentPayment({
+        tenantId: paymentTenant.id,
+        month: selectedMonth,
+        amount: amt,
+        expectedAmount: expected,
+        dueAmount: due > 0 ? due : 0,
+        paymentDate: Date.now(),
+        note: due > 0 ? `Partial payment. Due: ${formatCurrency(due)}` : '',
+      });
+      setAlertConfig({
+        visible: true,
+        title: t('common.success'),
+        message: due > 0
+          ? `${t('rent.paymentRecorded')} (Due: ${formatCurrency(due)})`
+          : t('rent.paymentRecorded'),
+        type: 'success',
+        onConfirm: () => setAlertConfig(null),
+      });
+    } catch (e: any) {
+      setAlertConfig({
+        visible: true,
+        title: t('common.error'),
+        message: e.message,
+        type: 'error',
+        onConfirm: () => setAlertConfig(null),
+      });
+    }
+    setPaymentTenant(null);
+  }, [paymentTenant, paymentAmount, selectedMonth, t]);
 
   return (
     <ScrollView
@@ -245,6 +297,37 @@ const RentDashboardScreen: React.FC = () => {
         </TouchableOpacity>
       </View>
 
+      {/* ── Quick Actions Row 2 ── */}
+      <View style={styles.quickActions}>
+        <TouchableOpacity
+          style={[styles.quickBtn, { backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1 }]}
+          onPress={() => navigation.navigate('ManageOwners')}
+          activeOpacity={0.7}>
+          <View style={[styles.quickIcon, { backgroundColor: '#60A5FA15' }]}>
+            <MaterialCommunityIcons name="account-tie" size={20} color="#60A5FA" />
+          </View>
+          <Text style={[styles.quickLabel, { color: colors.text }]}>{t('rent.owners')}</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.quickBtn, { backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1 }]}
+          onPress={() => navigation.navigate('AddOwnerContribution')}
+          activeOpacity={0.7}>
+          <View style={[styles.quickIcon, { backgroundColor: '#A78BFA15' }]}>
+            <MaterialCommunityIcons name="cash-plus" size={20} color="#A78BFA" />
+          </View>
+          <Text style={[styles.quickLabel, { color: colors.text }]}>{t('rent.addMoney')}</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.quickBtn, { backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1 }]}
+          onPress={() => navigation.navigate('ManageFlats')}
+          activeOpacity={0.7}>
+          <View style={[styles.quickIcon, { backgroundColor: '#34D39915' }]}>
+            <MaterialCommunityIcons name="door" size={20} color="#34D399" />
+          </View>
+          <Text style={[styles.quickLabel, { color: colors.text }]}>{t('rent.flats')}</Text>
+        </TouchableOpacity>
+      </View>
+
       {/* ── Tenants Section ── */}
       <View style={styles.sectionHeader}>
         <View style={[styles.sectionAccent, { backgroundColor: colors.primary }]} />
@@ -267,6 +350,7 @@ const RentDashboardScreen: React.FC = () => {
               <TenantListItem
                 key={tenant.id}
                 tenant={tenant}
+                flats={flats}
                 isPaid={isPaid}
                 onPress={() =>
                   navigation.navigate('TenantDetails', { tenantId: tenant.id })
@@ -303,6 +387,119 @@ const RentDashboardScreen: React.FC = () => {
               onPress={() => navigation.navigate('AddRentCost', { cost })}
             />
           ))}
+        </View>
+      )}
+
+      {/* ── Past Tenants Section (grouped by flat) ── */}
+      {pastTenants.length > 0 && (
+        <>
+          <View style={[styles.sectionHeader, { marginTop: 24 }]}>
+            <View style={[styles.sectionAccent, { backgroundColor: colors.textSecondary }]} />
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>{t('rent.pastTenants')}</Text>
+            <View style={[styles.countBadge, { backgroundColor: colors.textSecondary + '18' }]}>
+              <Text style={[styles.countText, { color: colors.textSecondary }]}>{pastTenants.length}</Text>
+            </View>
+          </View>
+          <View style={styles.listPadding}>
+            {(() => {
+              // Group past tenants by flat
+              const grouped: Record<string, typeof pastTenants> = {};
+              for (const pt of pastTenants) {
+                const key = pt.flatId;
+                if (!grouped[key]) grouped[key] = [];
+                grouped[key].push(pt);
+              }
+              return Object.entries(grouped).map(([fId, pts]) => {
+                const flat = flats.find(f => f.id === fId);
+                return (
+                  <View key={fId} style={{ marginBottom: 16 }}>
+                    {/* Flat header */}
+                    <View style={[styles.pastFlatHeader, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                      <MaterialCommunityIcons name="door" size={16} color={colors.primary} />
+                      <Text style={[styles.pastFlatName, { color: colors.text }]}>
+                        {flat?.flatNumber ?? t('rent.unknownFlat')}
+                      </Text>
+                      <View style={[styles.pastFlatBadge, { backgroundColor: colors.textSecondary + '18' }]}>
+                        <Text style={[styles.pastFlatBadgeText, { color: colors.textSecondary }]}>{pts.length}</Text>
+                      </View>
+                    </View>
+                    {/* Tenants under this flat */}
+                    {pts.map(pt => (
+                      <TouchableOpacity
+                        key={pt.id}
+                        style={[styles.pastTenantCard, { backgroundColor: colors.card, borderColor: colors.border }]}
+                        onPress={() => navigation.navigate('TenantDetails', { tenantId: pt.id })}
+                        activeOpacity={0.7}>
+                        <View style={[styles.pastTenantIcon, { backgroundColor: colors.textSecondary + '18' }]}>
+                          <MaterialCommunityIcons name="account-off-outline" size={18} color={colors.textSecondary} />
+                        </View>
+                        <View style={{ flex: 1 }}>
+                          <Text style={[styles.pastTenantName, { color: colors.text }]}>{pt.name}</Text>
+                          <Text style={[styles.pastTenantSub, { color: colors.textSecondary }]}>
+                            {formatCurrency(pt.rentAmount)}
+                            {pt.movedInAt ? ` · ${t('rent.movedIn')}: ${new Date(pt.movedInAt).toLocaleDateString()}` : ''}
+                          </Text>
+                          {pt.leftAt && (
+                            <Text style={[styles.pastTenantSub, { color: colors.error }]}>
+                              {t('rent.leftOn')}: {new Date(pt.leftAt).toLocaleDateString()}
+                            </Text>
+                          )}
+                        </View>
+                        <MaterialCommunityIcons name="chevron-right" size={20} color={colors.textSecondary} />
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                );
+              });
+            })()}
+          </View>
+        </>
+      )}
+
+      {/* ── Payment Amount Modal ── */}
+      {paymentModalVisible && paymentTenant && (
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalCard, { backgroundColor: colors.card }]}>
+            <Text style={[styles.modalTitle, { color: colors.text }]}>{t('rent.collectRent')}</Text>
+            <Text style={[styles.modalSub, { color: colors.textSecondary }]}>
+              {paymentTenant.name} · Flat {flats.find(f => f.id === paymentTenant.flatId)?.flatNumber ?? '—'}
+            </Text>
+            <Text style={[styles.modalExpected, { color: colors.textSecondary }]}>
+              {t('rent.totalExpected')}: {formatCurrency(paymentTenant.rentAmount)}
+            </Text>
+
+            <View style={[styles.modalInputWrap, { borderColor: colors.border, backgroundColor: colors.surface }]}>
+              <MaterialCommunityIcons name="cash" size={20} color={colors.primary} />
+              <TextInput
+                style={[styles.modalInput, { color: colors.text }]}
+                value={paymentAmount}
+                onChangeText={setPaymentAmount}
+                keyboardType="numeric"
+                placeholder="Enter amount paid"
+                placeholderTextColor={colors.textSecondary}
+                autoFocus
+              />
+            </View>
+
+            {Number(paymentAmount) > 0 && Number(paymentAmount) < paymentTenant.rentAmount && (
+              <Text style={[styles.modalDue, { color: '#FBBF24' }]}>
+                Due: {formatCurrency(paymentTenant.rentAmount - Number(paymentAmount))}
+              </Text>
+            )}
+
+            <View style={styles.modalActions}>
+              <TouchableOpacity
+                style={[styles.modalBtn, { backgroundColor: colors.surface }]}
+                onPress={() => { setPaymentModalVisible(false); setPaymentTenant(null); }}>
+                <Text style={[styles.modalBtnText, { color: colors.text }]}>{t('common.cancel')}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalBtn, { backgroundColor: colors.primary }]}
+                onPress={confirmPayment}>
+                <Text style={[styles.modalBtnText, { color: colors.textInverse }]}>{t('rent.confirmPayment')}</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
         </View>
       )}
 
@@ -456,6 +653,109 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   emptyText: { fontSize: 14 },
+
+  // Past tenants
+  pastTenantCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 14,
+    borderRadius: 14,
+    borderWidth: 1,
+    marginBottom: 10,
+    gap: 12,
+  },
+  pastTenantIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  pastTenantName: { fontSize: 15, fontWeight: '600' },
+  pastTenantSub: { fontSize: 12, marginTop: 2 },
+  pastFlatHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 12,
+    borderWidth: 1,
+    marginBottom: 8,
+  },
+  pastFlatName: { flex: 1, fontSize: 14, fontWeight: '700' },
+  pastFlatBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 10,
+  },
+  pastFlatBadgeText: { fontSize: 11, fontWeight: '700' },
+
+  // Payment modal
+  modalOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 100,
+  },
+  modalCard: {
+    width: '85%',
+    borderRadius: 20,
+    padding: 24,
+    gap: 12,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: '800',
+    textAlign: 'center',
+  },
+  modalSub: {
+    fontSize: 14,
+    textAlign: 'center',
+  },
+  modalExpected: {
+    fontSize: 13,
+    textAlign: 'center',
+  },
+  modalInputWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 12,
+    borderWidth: 1,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    gap: 10,
+  },
+  modalInput: {
+    flex: 1,
+    fontSize: 20,
+    fontWeight: '700',
+  },
+  modalDue: {
+    fontSize: 14,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  modalActions: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 4,
+  },
+  modalBtn: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  modalBtnText: {
+    fontSize: 15,
+    fontWeight: '700',
+  },
 });
 
 export default RentDashboardScreen;

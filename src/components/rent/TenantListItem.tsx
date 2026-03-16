@@ -1,13 +1,14 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
-import { Tenant } from '../../types';
+import { Tenant, Flat } from '../../types';
 import { useAppTheme } from '../../contexts/ThemeContext';
 import { formatCurrency } from '../../utils/formatting';
 import AnimatedPressable from '../common/AnimatedPressable';
 
 interface Props {
   tenant: Tenant;
+  flats: Flat[];
   isPaid: boolean;
   onPress: (tenant: Tenant) => void;
   onMarkPaid?: (tenant: Tenant) => void;
@@ -15,6 +16,7 @@ interface Props {
 
 const TenantListItem: React.FC<Props> = ({
   tenant,
+  flats,
   isPaid,
   onPress,
   onMarkPaid,
@@ -22,6 +24,7 @@ const TenantListItem: React.FC<Props> = ({
   const { theme } = useAppTheme();
   const { colors, borderRadius: br } = theme;
   const statusColor = isPaid ? colors.success : colors.warning;
+  const flat = flats.find(f => f.id === tenant.flatId);
 
   return (
     <AnimatedPressable
@@ -43,7 +46,7 @@ const TenantListItem: React.FC<Props> = ({
           {tenant.name}
         </Text>
         <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-          Flat {tenant.flatNumber}
+          Flat {flat?.flatNumber ?? '—'}
         </Text>
       </View>
 

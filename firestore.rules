@@ -52,11 +52,24 @@ service cloud.firestore {
       allow read: if request.auth != null
                   && resource.data.userId == request.auth.uid;
 
+      // Create: userId must match; movedInAt and isActive are required
       allow create: if request.auth != null
-                    && request.resource.data.userId == request.auth.uid;
+                    && request.resource.data.userId == request.auth.uid
+                    && request.resource.data.movedInAt is number
+                    && request.resource.data.isActive == true;
 
-      allow update, delete: if request.auth != null
-                            && resource.data.userId == request.auth.uid;
+      // Update: owner only; userId and flatId are immutable; leftAt only set on deactivation
+      allow update: if request.auth != null
+                    && resource.data.userId == request.auth.uid
+                    && request.resource.data.userId == resource.data.userId
+                    && request.resource.data.flatId == resource.data.flatId
+                    && (request.resource.data.isActive == true
+                        || request.resource.data.keys().hasAll(['isActive', 'leftAt'])
+                           && request.resource.data.isActive == false
+                           && request.resource.data.leftAt is number);
+
+      allow delete: if request.auth != null
+                    && resource.data.userId == request.auth.uid;
     }
 
     // ─── Rent Payments ───────────────────────────────────────────────────────────
@@ -85,6 +98,42 @@ service cloud.firestore {
 
     // ─── Income ────────────────────────────────────────────────────────────────────
     match /income/{incomeId} {
+      allow read: if request.auth != null
+                  && resource.data.userId == request.auth.uid;
+
+      allow create: if request.auth != null
+                    && request.resource.data.userId == request.auth.uid;
+
+      allow update, delete: if request.auth != null
+                            && resource.data.userId == request.auth.uid;
+    }
+
+    // ─── Owners ──────────────────────────────────────────────────────────────────
+    match /owners/{ownerId} {
+      allow read: if request.auth != null
+                  && resource.data.userId == request.auth.uid;
+
+      allow create: if request.auth != null
+                    && request.resource.data.userId == request.auth.uid;
+
+      allow update, delete: if request.auth != null
+                            && resource.data.userId == request.auth.uid;
+    }
+
+    // ─── Owner Contributions ─────────────────────────────────────────────────────
+    match /ownerContributions/{contributionId} {
+      allow read: if request.auth != null
+                  && resource.data.userId == request.auth.uid;
+
+      allow create: if request.auth != null
+                    && request.resource.data.userId == request.auth.uid;
+
+      allow update, delete: if request.auth != null
+                            && resource.data.userId == request.auth.uid;
+    }
+
+    // ─── Flats ───────────────────────────────────────────────────────────────────
+    match /flats/{flatId} {
       allow read: if request.auth != null
                   && resource.data.userId == request.auth.uid;
 

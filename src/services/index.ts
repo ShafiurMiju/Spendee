@@ -8,3 +8,5 @@ export * from './tenantService';
 export * from './rentService';
 export * from './incomeService';
 export * from './voiceEntryService';
+export * from './ownerService';
+export * from './flatService';

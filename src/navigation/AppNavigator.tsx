@@ -27,6 +27,12 @@ import RentReportScreen from '../screens/rent/RentReportScreen';
 import AddIncomeScreen from '../screens/income/AddIncomeScreen';
 import IncomeListScreen from '../screens/income/IncomeListScreen';
 import VoiceEntryScreen from '../screens/voice/VoiceEntryScreen';
+import ManageOwnersScreen from '../screens/rent/ManageOwnersScreen';
+import AddOwnerScreen from '../screens/rent/AddOwnerScreen';
+import AddOwnerContributionScreen from '../screens/rent/AddOwnerContributionScreen';
+import ManageFlatsScreen from '../screens/rent/ManageFlatsScreen';
+import AddFlatScreen from '../screens/rent/AddFlatScreen';
+import RentPDFExportScreen from '../screens/rent/RentPDFExportScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<BottomTabParamList>();
@@ -182,6 +188,36 @@ const AppNavigator: React.FC = () => {
             name="VoiceEntry"
             component={VoiceEntryScreen}
             options={{ presentation: 'modal', animation: 'slide_from_bottom' }}
+          />
+          <Stack.Screen
+            name="ManageOwners"
+            component={ManageOwnersScreen}
+            options={{ animation: 'slide_from_right' }}
+          />
+          <Stack.Screen
+            name="AddOwner"
+            component={AddOwnerScreen}
+            options={{ presentation: 'modal', animation: 'slide_from_bottom' }}
+          />
+          <Stack.Screen
+            name="AddOwnerContribution"
+            component={AddOwnerContributionScreen}
+            options={{ presentation: 'modal', animation: 'slide_from_bottom' }}
+          />
+          <Stack.Screen
+            name="ManageFlats"
+            component={ManageFlatsScreen}
+            options={{ animation: 'slide_from_right' }}
+          />
+          <Stack.Screen
+            name="AddFlat"
+            component={AddFlatScreen}
+            options={{ presentation: 'modal', animation: 'slide_from_bottom' }}
+          />
+          <Stack.Screen
+            name="RentPDFExport"
+            component={RentPDFExportScreen}
+            options={{ animation: 'slide_from_right' }}
           />
         </>
       )}
