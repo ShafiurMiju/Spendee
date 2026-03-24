@@ -1,7 +1,8 @@
 import React, { useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator, Animated } from 'react-native';
+import { View, Image, StyleSheet, ActivityIndicator, Animated } from 'react-native';
 import { useAppTheme } from '../../contexts/ThemeContext';
-import { SpendeeLogo } from '../../components/common';
+
+const logo = require('../../assets/images/logo.png');
 
 const SplashScreen: React.FC = () => {
   const { theme } = useAppTheme();
@@ -33,17 +34,17 @@ const SplashScreen: React.FC = () => {
   }, [pulseAnim, fadeAnim]);
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.primary }]}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <Animated.View style={{ transform: [{ scale: pulseAnim }] }}>
-        <SpendeeLogo size={120} color={colors.textInverse} showText textColor={colors.textInverse} />
+        <Image source={logo} style={styles.logo} resizeMode="contain" />
       </Animated.View>
       <Animated.Text
-        style={[styles.subtitle, { color: colors.textInverse, opacity: fadeAnim }]}>
+        style={[styles.subtitle, { color: colors.text, opacity: fadeAnim }]}>
         Smart Expense Tracker
       </Animated.Text>
       <ActivityIndicator
         size="large"
-        color={colors.textInverse}
+        color={colors.primary}
         style={styles.loader}
       />
     </View>
@@ -56,9 +57,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  logo: {
+    width: 160,
+    height: 160,
+    borderRadius: 32,
+  },
   subtitle: {
     fontSize: 16,
-    marginTop: 12,
+    marginTop: 16,
   },
   loader: {
     marginTop: 48,
