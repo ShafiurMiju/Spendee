@@ -4,9 +4,9 @@ import firestore from '@react-native-firebase/firestore';
 import { COLLECTIONS } from '../constants';
 import { User } from '../types';
 
-// Configure Google Sign-In — replace webClientId with your own from Firebase Console
+// Configure Google Sign-In
 GoogleSignin.configure({
-  webClientId: 'YOUR_WEB_CLIENT_ID.apps.googleusercontent.com',
+  webClientId: '504842728731-cev3k0441c7m3n83k6vn8146us1gp54n.apps.googleusercontent.com',
 });
 
 // ─── Sign in with Google ─────────────────────────────────────────────────────
@@ -110,7 +110,7 @@ function buildProfileFromFirebaseUser(firebaseUser: FirebaseAuthTypes.User): Use
 // ─── Sign out ────────────────────────────────────────────────────────────────
 export async function signOut(): Promise<void> {
   // Only revoke Google if user signed in with Google
-  const isGoogleUser = await GoogleSignin.isSignedIn().catch(() => false);
+  const isGoogleUser = GoogleSignin.hasPreviousSignIn();
   if (isGoogleUser) {
     await GoogleSignin.revokeAccess().catch(() => {});
     await GoogleSignin.signOut().catch(() => {});

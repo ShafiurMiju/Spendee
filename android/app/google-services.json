@@ -12,7 +12,20 @@
           "package_name": "com.spendee.app"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "504842728731-a2mkkcs1ls7na41clii4nn8p35edu4qh.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.spendee.app",
+            "certificate_hash": "5e8f16062ea3cd2c4a0d547876baa6f38cabf625"
+          }
+        },
+        {
+          "client_id": "504842728731-cev3k0441c7m3n83k6vn8146us1gp54n.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyBQOyRvHjT9hNrYC4RLJ_qCD1JaZf_3GJo"
@@ -20,7 +33,19 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "504842728731-cev3k0441c7m3n83k6vn8146us1gp54n.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "504842728731-369g7splsgil4fmkooknqdkebgrkk8pq.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.spendee.app"
+              }
+            }
+          ]
         }
       }
     }
