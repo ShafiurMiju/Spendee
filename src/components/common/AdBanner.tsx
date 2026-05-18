@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, StyleSheet, ViewStyle } from 'react-native';
 import {
   BannerAd,
@@ -11,14 +11,23 @@ interface Props {
   size?: BannerAdSize;
 }
 
-const AdBanner: React.FC<Props> = ({ style, size = BannerAdSize.ANCHORED_ADAPTIVE_BANNER }) => {
+const AdBanner: React.FC<Props> = ({ style, size = BannerAdSize.BANNER }) => {
+  const [loaded, setLoaded] = useState(false);
+
   return (
-    <View style={[styles.wrap, style]}>
+    <View style={[styles.wrap, !loaded && styles.placeholder, style]}>
       <BannerAd
         unitId={AD_UNIT_IDS.banner}
         size={size}
         requestOptions={{ requestNonPersonalizedAdsOnly: false }}
-        onAdFailedToLoad={err => console.warn('Banner failed:', err)}
+        onAdLoaded={() => {
+          setLoaded(true);
+          console.log('[AdBanner] loaded');
+        }}
+        onAdFailedToLoad={err => {
+          setLoaded(false);
+          console.warn('[AdBanner] failed:', err?.message ?? err);
+        }}
       />
     </View>
   );
@@ -26,6 +35,7 @@ const AdBanner: React.FC<Props> = ({ style, size = BannerAdSize.ANCHORED_ADAPTIV
 
 const styles = StyleSheet.create({
   wrap: { alignItems: 'center', justifyContent: 'center' },
+  placeholder: { minHeight: 50 },
 });
 
 export default AdBanner;
