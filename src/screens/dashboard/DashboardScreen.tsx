@@ -16,6 +16,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useAppTheme } from '../../contexts/ThemeContext';
 import { useAuth } from '../../contexts/AuthContext';
 import AnimatedPressable from '../../components/common/AnimatedPressable';
+import AdBanner from '../../components/common/AdBanner';
 import { ExpenseListItem } from '../../components/expense';
 import { getExpenses } from '../../services/expenseService';
 import { getIncomesByMonth } from '../../services/incomeService';
@@ -322,6 +323,8 @@ const DashboardScreen: React.FC = () => {
           );
         })
       )}
+
+      <AdBanner style={styles.adBanner} />
     </ScrollView>
   );
 };
@@ -435,6 +438,7 @@ const styles = StyleSheet.create({
   incomeTitle: { fontSize: 14, fontWeight: '600' },
   incomeMeta: { fontSize: 12, marginTop: 2 },
   incomeAmount: { fontSize: 15, fontWeight: '800', marginRight: 4 },
+  adBanner: { marginTop: 16, marginBottom: 100 },
 });
 
 export default DashboardScreen;

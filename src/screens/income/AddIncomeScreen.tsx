@@ -16,6 +16,7 @@ import { useAppTheme } from '../../contexts/ThemeContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Input, Button, AlertModal, ScreenHeader } from '../../components/common';
 import { addIncome, updateIncome } from '../../services/incomeService';
+import { showInterstitial } from '../../services/adsService';
 import { IncomeInput, RootStackParamList } from '../../types';
 import { DEFAULT_INCOME_SOURCES, INCOME_SOURCE_ICONS, DEFAULT_INCOME_ICON } from '../../constants/categories';
 import { AlertModalConfig } from '../../components/common/AlertModal';
@@ -96,7 +97,7 @@ const AddIncomeScreen: React.FC = () => {
           title: t('common.success'),
           message: t('income.updateSuccess'),
           type: 'success',
-          onConfirm: () => { setAlertConfig(null); navigation.goBack(); },
+          onConfirm: () => { setAlertConfig(null); showInterstitial(); navigation.goBack(); },
         });
       } else {
         await addIncome(input);
@@ -105,7 +106,7 @@ const AddIncomeScreen: React.FC = () => {
           title: t('common.success'),
           message: t('income.addSuccess'),
           type: 'success',
-          onConfirm: () => { setAlertConfig(null); navigation.goBack(); },
+          onConfirm: () => { setAlertConfig(null); showInterstitial(); navigation.goBack(); },
         });
       }
     } catch (e: any) {

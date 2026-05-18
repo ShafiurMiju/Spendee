@@ -29,6 +29,7 @@ import {
   openPDF,
 } from '../../services/pdfService';
 import { CategoryBreakdown, RootStackParamList } from '../../types';
+import { showInterstitial } from '../../services/adsService';
 import { getColorForIndex, toMonthKey } from '../../utils/formatting';
 import { AlertModalConfig } from '../../components/common/AlertModal';
 
@@ -272,12 +273,14 @@ const PDFExportScreen: React.FC = () => {
         onConfirm: () => {
           setAlertConfig(null);
           sharePDF(filePath);
+          showInterstitial();
         },
         onExtra: () => {
           setAlertConfig(null);
           openPDF(filePath);
+          showInterstitial();
         },
-        onCancel: () => setAlertConfig(null),
+        onCancel: () => { setAlertConfig(null); showInterstitial(); },
       });
     } catch (e: any) {
       setAlertConfig({

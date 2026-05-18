@@ -16,6 +16,7 @@ import { useAppTheme } from '../../contexts/ThemeContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { EmptyState } from '../../components/common';
 import AnimatedPressable from '../../components/common/AnimatedPressable';
+import AdBanner from '../../components/common/AdBanner';
 import { getExpenses, ExpenseFilter } from '../../services/expenseService';
 import { getCategories } from '../../services/categoryService';
 import { Expense, RootStackParamList, Category, ExpenseType, ExpenseTypeItem } from '../../types';
@@ -225,12 +226,13 @@ const ExpenseListScreen: React.FC = () => {
         data={expenses}
         keyExtractor={item => item.id}
         renderItem={renderItem}
-        contentContainerStyle={[styles.list, { paddingBottom: insets.bottom + 100 }]}
+        contentContainerStyle={[styles.list, { paddingBottom: insets.bottom + 180 }]}
         ListEmptyComponent={
           !loading ? (
             <EmptyState icon="receipt" message={t('expense.noExpenses')} />
           ) : null
         }
+        ListFooterComponent={<AdBanner style={styles.adBanner} />}
       />
 
       {/* ── FAB ── */}
@@ -446,6 +448,7 @@ const styles = StyleSheet.create({
 
   // List
   list: { paddingHorizontal: 16, paddingTop: 4 },
+  adBanner: { marginTop: 16 },
 
   // Item card
   itemCard: {

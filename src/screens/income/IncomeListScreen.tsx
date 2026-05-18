@@ -16,6 +16,7 @@ import { useAppTheme } from '../../contexts/ThemeContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { EmptyState, AlertModal } from '../../components/common';
 import AnimatedPressable from '../../components/common/AnimatedPressable';
+import AdBanner from '../../components/common/AdBanner';
 import { getIncomes, deleteIncome, IncomeFilter } from '../../services/incomeService';
 import { Income, RootStackParamList } from '../../types';
 import { DEFAULT_INCOME_SOURCES, INCOME_SOURCE_ICONS, DEFAULT_INCOME_ICON, MONTHS } from '../../constants/categories';
@@ -227,12 +228,13 @@ const IncomeListScreen: React.FC = () => {
         data={incomes}
         keyExtractor={item => item.id}
         renderItem={renderItem}
-        contentContainerStyle={[styles.list, { paddingBottom: insets.bottom + 100 }]}
+        contentContainerStyle={[styles.list, { paddingBottom: insets.bottom + 180 }]}
         ListEmptyComponent={
           !loading ? (
             <EmptyState icon="cash-plus" message={t('income.noIncome')} />
           ) : null
         }
+        ListFooterComponent={<AdBanner style={styles.adBanner} />}
       />
 
       {/* ── FAB ── */}
@@ -428,6 +430,7 @@ const styles = StyleSheet.create({
 
   // List
   list: { paddingHorizontal: 16, paddingTop: 4 },
+  adBanner: { marginTop: 16 },
 
   // Item card
   itemCard: {

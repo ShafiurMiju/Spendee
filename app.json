@@ -1,4 +1,8 @@
 {
   "name": "Spendee",
-  "displayName": "Spendee"
+  "displayName": "Spendee",
+  "react-native-google-mobile-ads": {
+    "android_app_id": "ca-app-pub-7264179067856018~6482412789",
+    "ios_app_id": "ca-app-pub-7264179067856018~6482412789"
+  }
 }

@@ -16,6 +16,7 @@ import { useAppTheme } from '../../contexts/ThemeContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Input, Button, AlertModal, ScreenHeader } from '../../components/common';
 import { addExpense, updateExpense } from '../../services/expenseService';
+import { showInterstitial } from '../../services/adsService';
 import { getCategories, seedCategoriesForType } from '../../services/categoryService';
 import { onExpenseTypesSnapshot, seedDefaultExpenseTypes } from '../../services/expenseTypeService';
 import { ExpenseInput, RootStackParamList, Category, ExpenseType, ExpenseTypeItem } from '../../types';
@@ -138,7 +139,7 @@ const AddExpenseScreen: React.FC = () => {
           title: t('common.success'),
           message: t('expense.updateSuccess'),
           type: 'success',
-          onConfirm: () => { setAlertConfig(null); navigation.goBack(); },
+          onConfirm: () => { setAlertConfig(null); showInterstitial(); navigation.goBack(); },
         });
       } else {
         await addExpense(input);
@@ -147,7 +148,7 @@ const AddExpenseScreen: React.FC = () => {
           title: t('common.success'),
           message: t('expense.addSuccess'),
           type: 'success',
-          onConfirm: () => { setAlertConfig(null); navigation.goBack(); },
+          onConfirm: () => { setAlertConfig(null); showInterstitial(); navigation.goBack(); },
         });
       }
     } catch (e: any) {

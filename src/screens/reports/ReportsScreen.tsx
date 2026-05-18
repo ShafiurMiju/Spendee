@@ -26,6 +26,11 @@ import {
   TYPE_ICONS, DEFAULT_TYPE_ICON,
   INCOME_SOURCE_ICONS, DEFAULT_INCOME_ICON,
 } from '../../constants/categories';
+import AdBanner from '../../components/common/AdBanner';
+import { showInterstitial } from '../../services/adsService';
+
+let lastReportsInterstitialAt = 0;
+const REPORTS_INTERSTITIAL_COOLDOWN_MS = 3 * 60 * 1000;
 
 const { width: SCREEN_W } = Dimensions.get('window');
 const CHART_W = SCREEN_W - 64;
@@ -124,6 +129,16 @@ const ReportsScreen: React.FC = () => {
   }, [period, customStart, customEnd]);
 
   useEffect(() => { loadData(); }, [loadData]);
+
+  useEffect(() => {
+    const unsub = navigation.addListener('focus', () => {
+      const now = Date.now();
+      if (now - lastReportsInterstitialAt > REPORTS_INTERSTITIAL_COOLDOWN_MS) {
+        if (showInterstitial()) lastReportsInterstitialAt = now;
+      }
+    });
+    return unsub;
+  }, [navigation]);
 
   // ── Computed ────────────────────────────────────────
   const totalExpenses = expenses.reduce((s, e) => s + e.amount, 0);
@@ -661,6 +676,7 @@ const ReportsScreen: React.FC = () => {
         <MaterialCommunityIcons name="chevron-right" size={22} color="rgba(255,255,255,0.5)" />
       </TouchableOpacity>
 
+      <AdBanner style={styles.adBanner} />
     </ScrollView>
   );
 };
@@ -668,6 +684,7 @@ const ReportsScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   content: { paddingHorizontal: 16 },
+  adBanner: { marginTop: 16, marginBottom: 100 },
 
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 },
   screenTitle: { fontSize: 28, fontWeight: '800', letterSpacing: -0.5 },
